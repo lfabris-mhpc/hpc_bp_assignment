@@ -1,3 +1,10 @@
+#ifndef __ENGINE_H__
+#define __ENGINE_H__
+
+#include "engine.h" 
+#include "def.h"
+#include "utilities.h"
+
 /* compute kinetic energy */
 static void ekin(mdsys_t *sys)
 {
@@ -76,3 +83,5 @@ static void velverlet(mdsys_t *sys)
         sys->vz[i] += 0.5*sys->dt / mvsq2e * sys->fz[i] / sys->mass;
     }
 }
+
+#endif
