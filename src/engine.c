@@ -1,9 +1,15 @@
-#include "engine.h" 
-#include "def.h"
+
+#include <math.h>
+#include "engine.h"
+#include "defs.h"
 #include "utilities.h"
 
+/* a few physical constants */
+const double kboltz=0.0019872067;     /* boltzman constant in kcal/mol/K */
+const double mvsq2e=2390.05736153349; /* m*v^2 in kcal/mol */
+
 /* compute kinetic energy */
-static void ekin(mdsys_t *sys)
+void ekin(mdsys_t *sys)
 {
     int i;
 
@@ -15,7 +21,7 @@ static void ekin(mdsys_t *sys)
 }
 
 /* compute forces */
-static void force(mdsys_t *sys)
+void force(mdsys_t *sys)
 {
     double r,ffac;
     double rx,ry,rz;
@@ -56,7 +62,7 @@ static void force(mdsys_t *sys)
 }
 
 /* velocity verlet */
-static void velverlet(mdsys_t *sys)
+void velverlet(mdsys_t *sys)
 {
     int i;
 

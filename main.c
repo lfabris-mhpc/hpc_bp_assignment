@@ -6,20 +6,20 @@
  */
 
 #include <stdio.h>
-#include <string.h>
-#include <ctype.h>
+//#include <string.h>
+//#include <ctype.h>
 #include <stdlib.h>
-#include <math.h>
-#include <sys/time.h>
+#include <assert.h>
+//#include <math.h>
+//#include <sys/time.h>
 
 #include "engine.h" 
 #include "input_output.h"
-#include "def.h"
+#include "defs.h"
 #include "utilities.h"
 #include "engine.h"
 
-/* generic file- or pathname buffer length */
-#define BLEN 200
+
 
 int main(int argc, char **argv)
 {
@@ -68,13 +68,17 @@ int main(int argc, char **argv)
     sys.fz=(double *)malloc(sys.natoms*sizeof(double));
 
     /* read restart */
+    // REMEBER TO CHECK THIS VARIABLE, THAT IS USELESS
+    int matched;
     fp=fopen(restfile,"r");
     if(fp) {
         for (i=0; i<sys.natoms; ++i) {
-            fscanf(fp,"%lf%lf%lf",sys.rx+i, sys.ry+i, sys.rz+i);
+            matched=fscanf(fp,"%lf%lf%lf",sys.rx+i, sys.ry+i, sys.rz+i);
+            assert(matched==3);
         }
         for (i=0; i<sys.natoms; ++i) {
-            fscanf(fp,"%lf%lf%lf",sys.vx+i, sys.vy+i, sys.vz+i);
+            matched=fscanf(fp,"%lf%lf%lf",sys.vx+i, sys.vy+i, sys.vz+i);
+            assert(matched==3);
         }
         fclose(fp);
         azzero(sys.fx, sys.natoms);
