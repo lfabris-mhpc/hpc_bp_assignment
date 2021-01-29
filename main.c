@@ -12,6 +12,12 @@
 #include <math.h>
 #include <sys/time.h>
 
+#include "engine.h" 
+#include "input_output.h"
+#include "def.h"
+#include "utilities.h"
+#include "engine.h"
+
 /* generic file- or pathname buffer length */
 #define BLEN 200
 
