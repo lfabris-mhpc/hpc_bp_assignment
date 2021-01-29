@@ -1,3 +1,5 @@
+#include "input_output.h"
+
 /* append data to output. */
 static void output(mdsys_t *sys, FILE *erg, FILE *traj)
 {
