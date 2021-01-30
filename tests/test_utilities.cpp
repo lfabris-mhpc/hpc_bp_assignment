@@ -4,8 +4,15 @@
 #include <time.h>
 #include <sys/time.h>
 
-extern "C" {
-#include <utilities.h>
+//extern "C" {
+//#include <utilities.h>
+//}
+
+double wallclock()
+{
+	struct timeval t;
+	gettimeofday(&t,0);
+	return ((double) t.tv_sec) + 1.0e-6*((double) t.tv_usec);
 }
 
 TEST(Wallclock, elapsed)

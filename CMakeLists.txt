@@ -17,8 +17,5 @@ if(PACKAGE_TESTS)
 	enable_language(CXX)
 	include(GTest)
 	
-	#enable_language(CXX)
-    #include(Gtest)
-	
     add_subdirectory(tests)
 endif()
