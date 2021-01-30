@@ -3,12 +3,13 @@
 #include <gtest/gtest.h>
 #include <time.h>
 #include <sys/time.h>
+#include <stdlib.h>
 
 extern "C" {
 #include <utilities.h>
 }
 
-TEST(Wallclock, elapsed)
+TEST(UtilitiesWallclock, elapsed)
 {
 	const double wait = 0.1;
 	
@@ -24,26 +25,36 @@ TEST(Wallclock, elapsed)
 	ASSERT_NEAR(delta, wait, 0.001);
 }
 
-/*
-TEST(Color, presets)
+TEST(UtilitiesAzzero, initAndAzzero)
 {
-	ASSERT_EQ(white.r,255);
-	ASSERT_EQ(white.g,255);
-	ASSERT_EQ(white.b,255);
-	ASSERT_EQ(black.r,0);
-	ASSERT_EQ(black.g,0);
-	ASSERT_EQ(black.b,0);
-	ASSERT_EQ(red.r,255);
-	ASSERT_EQ(red.g,0);
-	ASSERT_EQ(red.b,0);
-	ASSERT_EQ(green.r,0);
-	ASSERT_EQ(green.g,255);
-	ASSERT_EQ(green.b,0);
-	ASSERT_EQ(blue.r,0);
-	ASSERT_EQ(blue.g,0);
-	ASSERT_EQ(blue.b,255);
-	ASSERT_EQ(yellow.r,255);
-	ASSERT_EQ(yellow.g,255);
-	ASSERT_EQ(yellow.b,0);
+	constexpr int len{32};
+	double v[len];
+	for (auto i = 0; i < len; ++i) {
+		v[i] = (double) (i + 1);
+	}
+
+	for (auto i = 0; i < len; ++i) {
+		ASSERT_DOUBLE_EQ(v[i], (double) (i + 1));
+	}
+
+	azzero(v, len);
+
+	for (auto i = 0; i < len; ++i) {
+		ASSERT_DOUBLE_EQ(v[i], 0.0);
+	}
 }
-*/
+
+TEST(UtilitiesPBC, randomPBC)
+{
+	constexpr double radius_outer{3.14};
+	constexpr double radius_inner{2.14};
+	
+	srand(48501387);
+	for (auto i = 0; i < 1000; ++i) {
+		double toss{2 * radius_outer * rand() / (double) RAND_MAX - radius_outer};
+		double contracted{pbc(toss, radius_inner)};
+	
+		ASSERT_GE(contracted, -radius_inner);
+		ASSERT_LE(contracted, radius_inner);
+	}
+}
