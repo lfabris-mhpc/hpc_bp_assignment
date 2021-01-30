@@ -44,14 +44,11 @@ TEST(UtilitiesAzzero, initAndAzzero)
 	}
 }
 
-TEST(UtilitiesPBC, randomPBC)
+TEST(UtilitiesPBC, sequentialPBC)
 {
-	constexpr double radius_outer{3.14};
-	constexpr double radius_inner{2.14};
-	
-	srand(48501387);
-	for (auto i = 0; i < 1000; ++i) {
-		double toss{2 * radius_outer * rand() / (double) RAND_MAX - radius_outer};
+	constexpr double radius_inner{1.1};
+	for (auto i = -10; i < 11; ++i) {
+		double toss{0.2 * i};
 		double contracted{pbc(toss, radius_inner)};
 	
 		ASSERT_GE(contracted, -radius_inner);
