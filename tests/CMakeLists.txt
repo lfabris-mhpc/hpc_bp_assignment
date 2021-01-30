@@ -14,7 +14,7 @@ add_test(NAME Regression-test COMMAND regression.sh)
 #utilities
 add_executable(test_utilities.x test_utilities.cpp)
 target_include_directories(test_utilities.x PRIVATE ../include)
-target_link_libraries(test_utilities.x PRIVATE GTest::GTestMain GTest::GTest) # ljmd_rt)
+target_link_libraries(test_utilities.x PRIVATE GTest::GTestMain GTest::GTest ljmd_rt)
 
 add_test(NAME Unit-test-utilities COMMAND test_utilities.x)
 

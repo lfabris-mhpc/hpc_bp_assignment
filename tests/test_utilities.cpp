@@ -4,15 +4,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-//extern "C" {
-//#include <utilities.h>
-//}
-
-double wallclock()
-{
-	struct timeval t;
-	gettimeofday(&t,0);
-	return ((double) t.tv_sec) + 1.0e-6*((double) t.tv_usec);
+extern "C" {
+#include <utilities.h>
 }
 
 TEST(Wallclock, elapsed)
@@ -30,6 +23,7 @@ TEST(Wallclock, elapsed)
 	ASSERT_GE(delta, wait);
 	ASSERT_NEAR(delta, wait, 0.001);
 }
+
 /*
 TEST(Color, presets)
 {
