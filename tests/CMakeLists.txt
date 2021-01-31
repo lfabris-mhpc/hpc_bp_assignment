@@ -18,7 +18,6 @@ target_link_libraries(test_utilities.x PRIVATE GTest::GTestMain GTest::GTest ljm
 
 add_test(NAME Unit-test-utilities COMMAND test_utilities.x)
 
-
 # does it create the file write.ppm?
 #file(WRITE ${CMAKE_BINARY_DIR}/test_write.sh "rm -f *.ppm && ./canvas-draw && test -f white.ppm")
 #add_test(NAME Writes COMMAND bash test_write.sh)
