@@ -1,6 +1,8 @@
 #ifndef __DEFS_H__
 #define __DEFS_H__
 
+#include <stdlib.h>
+
 /* generic file- or pathname buffer length */
 #define BLEN 200
 
@@ -16,5 +18,8 @@ struct _mdsys {
     double *fx, *fy, *fz;
 };
 typedef struct _mdsys mdsys_t;
+
+
+int mdsys_init(mdsys_t* sys);
 
 #endif
