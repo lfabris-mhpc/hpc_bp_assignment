@@ -7,6 +7,7 @@ add_library(ljmd_rt SHARED
     src/engine.c
     src/input_output.c
     src/utilities.c
+    src/defs.c
 )
 target_include_directories(ljmd_rt PRIVATE include)
 target_link_libraries(ljmd_rt PRIVATE m)

@@ -1,8 +1,6 @@
 
-#include <math.h>
+
 #include "engine.h"
-#include "defs.h"
-#include "utilities.h"
 
 /* a few physical constants */
 const double kboltz=0.0019872067;     /* boltzman constant in kcal/mol/K */

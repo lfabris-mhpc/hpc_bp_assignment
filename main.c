@@ -6,26 +6,22 @@
  */
 
 #include <stdio.h>
-//#include <string.h>
-//#include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>
-//#include <math.h>
-//#include <sys/time.h>
+
 
 #include "engine.h" 
 #include "input_output.h"
 #include "defs.h"
 #include "utilities.h"
-#include "engine.h"
 
 
 
 int main(int argc, char **argv)
 {
-    int nprint, i;
+    int nprint, check;
     char restfile[BLEN], trajfile[BLEN], ergfile[BLEN], line[BLEN];
-    FILE *fp,*traj,*erg;
+    FILE *traj,*erg;
     mdsys_t sys;
     double t_start;
 
@@ -33,62 +29,15 @@ int main(int argc, char **argv)
 
     t_start = wallclock();
 
-    /* read input file */
-    if(get_a_line(stdin,line)) return 1;
-    sys.natoms=atoi(line);
-    if(get_a_line(stdin,line)) return 1;
-    sys.mass=atof(line);
-    if(get_a_line(stdin,line)) return 1;
-    sys.epsilon=atof(line);
-    if(get_a_line(stdin,line)) return 1;
-    sys.sigma=atof(line);
-    if(get_a_line(stdin,line)) return 1;
-    sys.rcut=atof(line);
-    if(get_a_line(stdin,line)) return 1;
-    sys.box=atof(line);
-    if(get_a_line(stdin,restfile)) return 1;
-    if(get_a_line(stdin,trajfile)) return 1;
-    if(get_a_line(stdin,ergfile)) return 1;
-    if(get_a_line(stdin,line)) return 1;
-    sys.nsteps=atoi(line);
-    if(get_a_line(stdin,line)) return 1;
-    sys.dt=atof(line);
-    if(get_a_line(stdin,line)) return 1;
-    nprint=atoi(line);
+	check=read_input_file(&sys, stdin, line, restfile, trajfile, ergfile, &nprint);
+	assert(check==0);
+	
+	check = mdsys_init(&sys);
+	assert(check==0);
 
-    /* allocate memory */
-    sys.rx=(double *)malloc(sys.natoms*sizeof(double));
-    sys.ry=(double *)malloc(sys.natoms*sizeof(double));
-    sys.rz=(double *)malloc(sys.natoms*sizeof(double));
-    sys.vx=(double *)malloc(sys.natoms*sizeof(double));
-    sys.vy=(double *)malloc(sys.natoms*sizeof(double));
-    sys.vz=(double *)malloc(sys.natoms*sizeof(double));
-    sys.fx=(double *)malloc(sys.natoms*sizeof(double));
-    sys.fy=(double *)malloc(sys.natoms*sizeof(double));
-    sys.fz=(double *)malloc(sys.natoms*sizeof(double));
-
-    /* read restart */
-    // REMEBER TO CHECK THIS VARIABLE, THAT IS USELESS
-    int matched;
-    fp=fopen(restfile,"r");
-    if(fp) {
-        for (i=0; i<sys.natoms; ++i) {
-            matched=fscanf(fp,"%lf%lf%lf",sys.rx+i, sys.ry+i, sys.rz+i);
-            assert(matched==3);
-        }
-        for (i=0; i<sys.natoms; ++i) {
-            matched=fscanf(fp,"%lf%lf%lf",sys.vx+i, sys.vy+i, sys.vz+i);
-            assert(matched==3);
-        }
-        fclose(fp);
-        azzero(sys.fx, sys.natoms);
-        azzero(sys.fy, sys.natoms);
-        azzero(sys.fz, sys.natoms);
-    } else {
-        perror("cannot read restart file");
-        return 3;
-    }
-
+	check = read_restart(&sys, restfile);
+	assert(check==0);
+	
     /* initialize forces and energies.*/
     sys.nfi=0;
     force(&sys);
