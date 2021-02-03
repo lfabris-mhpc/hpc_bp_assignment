@@ -60,7 +60,7 @@ void force(mdsys_t *sys)
 }
 
 /* velocity verlet */
-void velverlet(mdsys_t *sys)
+void verlet_1(mdsys_t *sys)
 {
     int i;
 
@@ -73,9 +73,11 @@ void velverlet(mdsys_t *sys)
         sys->ry[i] += sys->dt*sys->vy[i];
         sys->rz[i] += sys->dt*sys->vz[i];
     }
+}
 
-    /* compute forces and potential energy */
-    force(sys);
+void verlet_2(mdsys_t *sys)
+{
+    int i;
 
     /* second part: propagate velocities by another half step */
     for (i=0; i<sys->natoms; ++i) {
@@ -84,3 +86,4 @@ void velverlet(mdsys_t *sys)
         sys->vz[i] += 0.5*sys->dt / mvsq2e * sys->fz[i] / sys->mass;
     }
 }
+

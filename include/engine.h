@@ -9,6 +9,8 @@ void ekin(mdsys_t *sys);
 
 void force(mdsys_t *sys);
 
-void velverlet(mdsys_t *sys);
+void verlet_1(mdsys_t *sys);
+
+void verlet_2(mdsys_t *sys);
 
 #endif
