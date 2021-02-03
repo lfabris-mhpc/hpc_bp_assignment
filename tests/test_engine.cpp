@@ -46,6 +46,7 @@ TEST(EngineVerlet_1, verlet_1)
 	check = read_restart(&sys, restfile);
 	assert(check==0);
 
+	//values computed by hand
 	const double VERLET_1_byhand{0.012246398,0.005674874,0.005674874,0.0024492796,0.00113497486,0.00113497486};
 
 	verlet_1(&sys);
@@ -73,7 +74,8 @@ TEST(EngineVerlet_2, verlet_2)
 
 	check = read_restart(&sys, restfile);
 	assert(check==0);
-
+	
+	//values computed by hand
 	const double VERLET_2_byhand{0.0024492796,0.00113497486,0.00113497486};
 
 	verlet_2(&sys);
