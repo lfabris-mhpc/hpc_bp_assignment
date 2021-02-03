@@ -9,6 +9,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 /* a few physical constants */
 const double kboltz = 0.0019872067; /* boltzman constant in kcal/mol/K */
 const double mvsq2e = 2390.05736153349; /* m*v^2 in kcal/mol */
@@ -119,6 +123,11 @@ void force_mpi(mdsys_t* sys, const int nranks, const int rank) {
     azzero(sys->py + begin, end - begin);
     azzero(sys->pz + begin, end - begin);
 	*/
+#ifdef _OPENMP
+	double *px = sys->px;
+	double *py = sys->py;
+	double *pz = sys->pz;
+#endif
 	azzero(sys->px, sys->natoms);
     azzero(sys->py, sys->natoms);
     azzero(sys->pz, sys->natoms);
@@ -130,6 +139,9 @@ void force_mpi(mdsys_t* sys, const int nranks, const int rank) {
 	ret = MPI_Waitall(3, reqs, statuses);
 	assert(ret == MPI_SUCCESS);
 
+#ifdef _OPENMP
+	#pragma omp parallel for shared(sys, begin, end) private(i, j, r, ffac, rx, ry, rz) reduction(+: px[begin:end], py[begin:end], pz[begin:end], epot)
+#endif
     for (i = begin; i < end; ++i) {
         for (j = 0; j < (sys->natoms); ++j) {
             /* particles have no interactions with themselves */
