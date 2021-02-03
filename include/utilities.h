@@ -2,8 +2,11 @@
 #define __UTILITIES_H__
 
 #include <stdio.h>
-
-int get_a_line(FILE *fp, char *buf);
+#include <string.h>
+#include <ctype.h>
+#include <sys/time.h>
+#include "defs.h"
+#include "input_output.h"
 
 
 double wallclock();
