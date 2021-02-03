@@ -6,11 +6,10 @@
 /* generic file- or pathname buffer length */
 #define BLEN 200
 
-
 /* structure to hold the complete information
  * about the MD system */
 struct _mdsys {
-    int natoms,nfi,nsteps;
+    int natoms, nfi, nsteps;
     double dt, mass, epsilon, sigma, box, rcut;
     double ekin, epot, temp;
     double *rx, *ry, *rz;
@@ -18,7 +17,6 @@ struct _mdsys {
     double *fx, *fy, *fz;
 };
 typedef struct _mdsys mdsys_t;
-
 
 int mdsys_init(mdsys_t* sys);
 
