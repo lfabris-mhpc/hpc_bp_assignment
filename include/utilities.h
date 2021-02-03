@@ -8,14 +8,10 @@
 #include "defs.h"
 #include "input_output.h"
 
-
 double wallclock();
 
-
-void azzero(double *d, const int n);
-
+void azzero(double* d, const int n);
 
 double pbc(double x, const double boxby2);
-
 
 #endif
