@@ -6,19 +6,14 @@ project(ljmd VERSION ${LJMD_VERSION} LANGUAGES C)
 
 #basic compiler flags
 list(APPEND ccflags "-Wall" "-Wextra" "-DLJMD_VERSION=${LJMD_VERSION}")
-list(APPEND ldflags "-Wall" "-Wextra" "-DLJMD_VERSION=${LJMD_VERSION}")
 #compiler-optimization flags
-list(APPEND ccflags_copt "-g" "-O3" "-DNDEBUG" "-ffast-math" "-fomit-frame-pointer")
-list(APPEND ldflags_copt "-g" "-O3" "-DNDEBUG" "-ffast-math" "-fomit-frame-pointer")
+list(APPEND ccflags_copt "-g" "-O3" "-march=native" "-DNDEBUG" "-ffast-math" "-fomit-frame-pointer")
 #algorithmic-optimization enabling flags
 list(APPEND ccflags_aopt "-D__OPT")
-list(APPEND ldflags_aopt "-D__OPT")
 #OpenMP-enabling flags
 list(APPEND ccflags_omp "-fopenmp")
-list(APPEND ldflags_omp "-fopenmp")
 #MPI-enabling flags
 list(APPEND ccflags_mpi "-D__MPI")
-list(APPEND ldflags_mpi "-D__MPI")
 
 option(BUILD_CompilerOpt "Build with compiler optimization" ON)
 
@@ -56,14 +51,14 @@ if(BUILD_CompilerOpt)
 			src/input_output.c
 			src/utilities.c
 			)
-	list(APPEND ccflags ${ccflags_copt})
+	#list(APPEND lccflags ${ccflags} ${ccflags_copt})
 	
 	target_include_directories(ljmd_rt.copt PRIVATE include)
 	target_link_libraries(ljmd_rt.copt PRIVATE m)
 
 	add_executable(ljmd.copt.x main.c)
 	target_include_directories(ljmd.copt.x PRIVATE include)
-	target_compile_options(ljmd.copt.x PRIVATE ${ccflags})
+	target_compile_options(ljmd.copt.x PRIVATE ${ccflags} ${ccflags_copt})
 
 	target_link_libraries(ljmd.copt.x PRIVATE m ljmd_rt.copt)
 endif()
@@ -74,14 +69,14 @@ if(BUILD_AlgorithmicOpt)
 			src/input_output.c
 			src/utilities.c
 			)
-	list(APPEND ccflags ${ccflags_copt} ${ccflags_aopt})
+	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt})
 	
 	target_include_directories(ljmd_rt.aopt PRIVATE include)
 	target_link_libraries(ljmd_rt.aopt PRIVATE m)
 
 	add_executable(ljmd.aopt.x main.c)
 	target_include_directories(ljmd.aopt.x PRIVATE include)
-	target_compile_options(ljmd.aopt.x PRIVATE ${ccflags})
+	target_compile_options(ljmd.aopt.x PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt})
 
 	target_link_libraries(ljmd.aopt.x PRIVATE m ljmd_rt.aopt)
 endif()
@@ -94,15 +89,15 @@ if(BUILD_OpenMP)
 			src/input_output.c
 			src/utilities.c
 			)
-	list(APPEND ccflags ${ccflags_copt} ${ccflags_aopt} ${ccflags_omp})
+	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_omp})
 	
-	target_compile_options(ljmd_rt.omp PRIVATE ${ccflags})
+	target_compile_options(ljmd_rt.omp PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_omp})
 	target_include_directories(ljmd_rt.omp PRIVATE include)
 	target_link_libraries(ljmd_rt.omp PRIVATE m OpenMP::OpenMP_C)
 
 	add_executable(ljmd.omp.x main.c)
 	target_include_directories(ljmd.omp.x PRIVATE include)
-	target_compile_options(ljmd.omp.x PRIVATE ${ccflags})
+	target_compile_options(ljmd.omp.x PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_omp})
 
 	target_link_libraries(ljmd.omp.x PRIVATE m ljmd_rt.omp OpenMP::OpenMP_C)
 endif()
@@ -117,15 +112,15 @@ if(BUILD_MPI)
 			src/input_output.c
 			src/utilities.c
 			)
-	list(APPEND ccflags ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi})
+	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi})
 	
-	target_compile_options(ljmd_rt.mpi PRIVATE ${ccflags})
+	target_compile_options(ljmd_rt.mpi PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi})
 	target_include_directories(ljmd_rt.mpi PRIVATE include ${MPI_INCLUDE_PATH})
 	target_link_libraries(ljmd_rt.mpi PRIVATE m MPI::MPI_C)
 
 	add_executable(ljmd.mpi.x main.c)
 	target_include_directories(ljmd.mpi.x PRIVATE include)
-	target_compile_options(ljmd.mpi.x PRIVATE ${ccflags})
+	target_compile_options(ljmd.mpi.x PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi})
 
 	target_link_libraries(ljmd.mpi.x PRIVATE m ljmd_rt.mpi MPI::MPI_C)
 endif()
@@ -138,15 +133,15 @@ if(BUILD_HYBRID)
 			src/input_output.c
 			src/utilities.c
 			)
-	list(APPEND ccflags ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi} ${ccflags_omp})
+	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi} ${ccflags_omp})
 
-	target_compile_options(ljmd_rt.hybrid PRIVATE ${ccflags})
+	target_compile_options(ljmd_rt.hybrid PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi} ${ccflags_omp})
 	target_include_directories(ljmd_rt.hybrid PRIVATE include ${MPI_INCLUDE_PATH})
 	target_link_libraries(ljmd_rt.hybrid PRIVATE m MPI::MPI_C OpenMP::OpenMP_C)
 
 	add_executable(ljmd.hybrid.x main.c)
 	target_include_directories(ljmd.hybrid.x PRIVATE include)
-	target_compile_options(ljmd.hybrid.x PRIVATE ${ccflags})
+	target_compile_options(ljmd.hybrid.x PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi} ${ccflags_omp})
 
 	target_link_libraries(ljmd.hybrid.x PRIVATE m ljmd_rt.hybrid MPI::MPI_C OpenMP::OpenMP_C)
 endif()
