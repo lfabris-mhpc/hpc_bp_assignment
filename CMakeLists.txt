@@ -14,7 +14,7 @@ target_link_libraries(ljmd_rt PRIVATE m)
 
 add_executable(ljmd.x main.c)
 target_include_directories(ljmd.x PRIVATE include)
-target_compile_options(ljmd.x PUBLIC -Wall -g -O3 -march=native -ffast-math -fomit-frame-pointer -fexpensive-optimizations -msse3)
+target_compile_options(ljmd.x PUBLIC -Wall -g -O3 -march=native -ffast-math -fomit-frame-pointer -fexpensive-optimizations)
 target_compile_definitions(ljmd.x PRIVATE -DLJMD_VERSION=${LJMD_VERSION})
 
 target_link_libraries(ljmd.x PRIVATE m)
