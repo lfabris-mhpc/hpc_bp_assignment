@@ -25,6 +25,3 @@ target_link_libraries(test_engine.x PRIVATE GTest::GTestMain GTest::GTest ljmd_r
 
 add_test(NAME Unit-test-engine COMMAND echo "argon_2.inp" > test_engine.x)
 
-# does it create the file write.ppm?
-#file(WRITE ${CMAKE_BINARY_DIR}/test_write.sh "rm -f *.ppm && ./canvas-draw && test -f white.ppm")
-#add_test(NAME Writes COMMAND bash test_write.sh)
