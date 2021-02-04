@@ -25,8 +25,8 @@ exe=ljmd.x
 ref=argon_108
 process
 
-ref=argon_2916
-process
+#ref=argon_2916
+#process
 
 
 exit 0
