@@ -5,7 +5,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
 else()
   set(GTEST_LIB_POSTFIX)
 endif()
-
+set(CMAKE_CXX_STANDARD 11)
 include(ExternalProject)
 set(GTEST_URL "https://github.com/google/googletest/archive/release-1.10.0.tar.gz" CACHE STRING "URL for GTest tarball")
 mark_as_advanced(GTEST_URL)

@@ -7,6 +7,7 @@ add_test(NAME Dry-run-test COMMAND echo "" > ../ljmd.x)
 file(COPY ../examples DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../reference DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY regression.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#file(COPY regression_OMP.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_test(NAME Regression-test COMMAND regression.sh)
 

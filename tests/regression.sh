@@ -11,7 +11,7 @@ function process() {
 	#cmp a.dat b.dat || exit 1
 	check=$(paste a.dat b.dat | awk 'function abs(x) {return (x<0?-x:x);} {for (i=1; i<5; ++i) {j=i+4; if (abs($i-$j) > 0.01) {printf("failed %.6f vs %.6f\n", $i, $j);} } }')
 	
-	rm -f a.dat b.dat
+	#rm -f a.dat b.dat
 	
 	if [ -n "${check}" ]
 	then
