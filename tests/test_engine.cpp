@@ -28,7 +28,7 @@ TEST(EngineEkin, ekin) {
     ASSERT_DOUBLE_EQ(sys.ekin, Ek_byhand);
 
     check = mdsys_free(&sys);
-	assert(check == 0);
+    assert(check == 0);
 }
 
 TEST(EngineVerlet_1, verlet_1) {
@@ -83,7 +83,7 @@ TEST(EngineVerlet_2, verlet_2) {
     ASSERT_DOUBLE_EQ(sys.vz[0], VERLET_2_byhand[2]);
 
     check = mdsys_free(&sys);
-	assert(check == 0);
+    assert(check == 0);
 }
 
 TEST(EngineForce, force) {
@@ -113,5 +113,5 @@ TEST(EngineForce, force) {
     ASSERT_DOUBLE_EQ(sys.fz[1], -Fz_byhand);
 
     check = mdsys_free(&sys);
-	assert(check == 0);
+    assert(check == 0);
 }

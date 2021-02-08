@@ -70,8 +70,8 @@ int main(int argc, char** argv) {
     fclose(erg);
     fclose(traj);
 
-	check = mdsys_free(&sys);
-	assert(check == 0);
+    check = mdsys_free(&sys);
+    assert(check == 0);
 
     return 0;
 }

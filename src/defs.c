@@ -28,10 +28,10 @@ int mdsys_init(mdsys_t* sys) {
 }
 
 int mdsys_free(mdsys_t* sys) {
-	int ret = 0;
-	
-	free(sys->rx);
-	ret += sys->rx != NULL;
+    int ret = 0;
+
+    free(sys->rx);
+    ret += sys->rx != NULL;
     free(sys->ry);
     ret += sys->ry != NULL;
     free(sys->rz);
@@ -49,5 +49,5 @@ int mdsys_free(mdsys_t* sys) {
     free(sys->fz);
     ret += sys->fz != NULL;
 
-	return ret;
+    return ret;
 }
