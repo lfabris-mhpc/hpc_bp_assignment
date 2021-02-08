@@ -10,6 +10,8 @@ file(COPY regression.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_test(NAME Regression-test COMMAND regression.sh)
 
+find_package(MPI REQUIRED)
+
 #unit tests
 #utilities
 add_executable(test_utilities.x test_utilities.cpp)
@@ -21,10 +23,7 @@ add_test(NAME Unit-test-utilities COMMAND test_utilities.x)
 #engine
 add_executable(test_engine.x test_engine.cpp)
 target_include_directories(test_engine.x PRIVATE ../include)
-target_link_libraries(test_engine.x PRIVATE GTest::GTestMain GTest::GTest ljmd_rt)
+target_link_libraries(test_engine.x PRIVATE GTest::GTestMain GTest::GTest ljmd_rt MPI::MPI_CXX)
 
 add_test(NAME Unit-test-engine COMMAND echo "argon_2.inp" > test_engine.x)
 
-# does it create the file write.ppm?
-#file(WRITE ${CMAKE_BINARY_DIR}/test_write.sh "rm -f *.ppm && ./canvas-draw && test -f white.ppm")
-#add_test(NAME Writes COMMAND bash test_write.sh)
