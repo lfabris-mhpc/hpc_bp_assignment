@@ -20,4 +20,6 @@ typedef struct _mdsys mdsys_t;
 
 int mdsys_init(mdsys_t* sys);
 
+int mdsys_free(mdsys_t* sys);
+
 #endif
