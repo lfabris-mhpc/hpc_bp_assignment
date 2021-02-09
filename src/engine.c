@@ -5,9 +5,8 @@
 #include "defs.h"
 #include "utilities.h"
 
-#ifdef _OPENMP
 #include <omp.h>
-#endif
+#include <mpi.h>
 
 /* a few physical constants */
 const double kboltz = 0.0019872067; /* boltzman constant in kcal/mol/K */
@@ -99,61 +98,50 @@ void verlet_2(mdsys_t* sys) {
 }
 
 
-#ifdef _OPENMP
 // compute forces using threads/
-void force_openmp(mdsys_t* sys, const int nthreads, const int tid) {
-    double r, ffac;
+void force_openmp(mdsys_t* sys) {
 
-    // zero energy and forces /
-//    sys->epot = 0.0;
+    azzero(sys->fx, sys->natoms);
+    azzero(sys->fy, sys->natoms);
+    azzero(sys->fz, sys->natoms);
 
     double epot = 0.0;
+    double *fx = sys->fx;
+    double *fy = sys->fy;
+    double *fz = sys->fz;
 
-	#pragma omp parallel reduction(+:epot)
+	#pragma omp parallel shared(sys) reduction(+:epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
     	{
-		int i, j;
-		int fromidx, toidx;
-
-	    	double rx, ry, rz;
-		double *fx, *fy, *fz;
-
-//		int nthreads = omp_get_num_threads();
-
-//		int tid = omp_get_thread_num();	
-
-		fx = sys->fx + (tid * sys->natoms);
-		fy = sys->fy + (tid * sys->natoms);
-		fz = sys->fz + (tid * sys->natoms);
-
-		azzero(fx, sys->natoms);
-		azzero(fy, sys->natoms);
-	 	azzero(fz, sys->natoms);
-
+		const int nthreads = omp_get_num_threads();
+		const int tid = omp_get_thread_num();	
     
 	    //Third Newton law: eliminate if(i==j)/
-	    for (i = tid; i < (sys->natoms)-1; i += nthreads) {
-        	for (j = i+1; j < (sys->natoms); ++j) {
+	    for (int i = 0; i < (sys->natoms)-1; i += nthreads) {
+		    int ii = i + tid;
+		    if ( ii >= (sys->natoms) - 1)
+			    break;
+
+        	for (int j = ii + 1; j < (sys->natoms); ++j) {
             // particles have no interactions with themselves 
 //            if (i == j)
 //                continue;
 
 	            // get distance between particle i and j 
-        	    rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
-	            ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
-        	    rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
-	            r = sqrt(rx * rx + ry * ry + rz * rz);
+        	    const double rx = pbc(sys->rx[ii] - sys->rx[j], 0.5 * sys->box);
+	            const double ry = pbc(sys->ry[ii] - sys->ry[j], 0.5 * sys->box);
+        	    const double rz = pbc(sys->rz[ii] - sys->rz[j], 0.5 * sys->box);
+	            const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
         	    // compute force and energy if within cutoff 
 	            if (r < sys->rcut) {
-        	        ffac = -4.0 * sys->epsilon *
+        	        const double ffac = -4.0 * sys->epsilon *
                 	    (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
 
-	                sys->epot += 0.5 * 4.0 * sys->epsilon *
-        	            (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+	                epot += 4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
 
-	                fx[i] += rx / r * ffac;
-        	        fy[i] += ry / r * ffac;
-	                fz[i] += rz / r * ffac;
+	                fx[ii] += rx / r * ffac;
+        	        fy[ii] += ry / r * ffac;
+	                fz[ii] += rz / r * ffac;
 
         	        fx[j] -= rx / r * ffac;
                 	fy[j] -= ry / r * ffac;
@@ -162,27 +150,10 @@ void force_openmp(mdsys_t* sys, const int nthreads, const int tid) {
 		    }
 		}
 	    }
-
-	#pragma omp barrier
-
-	    i = 1 + (sys->natoms / nthreads);
-	    fromidx = tid * i;
-	    toidx = fromidx + i;
-
-	    if (toidx > sys->natoms) toidx = sys->natoms;
-
-	    for (i=1; i < nthreads; ++i ) {
-		    int offs = i * sys->natoms;
-		    for (j = fromidx; j < toidx; ++j) {
-			    sys->fx[j] += sys->fx[offs+j];
-			    sys->fy[j] += sys->fy[offs+j];
-			    sys->fz[j] += sys->fz[offs+j];
-		    }
-	    }
-	    
+	 
 	}
 	   
 	sys->epot = epot;
 }
-#endif
+
 

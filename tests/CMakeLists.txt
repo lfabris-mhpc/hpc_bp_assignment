@@ -26,6 +26,12 @@ target_link_libraries(test_engine.x PRIVATE GTest::GTestMain GTest::GTest ljmd_r
 
 add_test(NAME Unit-test-engine COMMAND echo "argon_2.inp" > test_engine.x)
 
+if(BUILD_OPENMP)
+	file(COPY regression-OMP.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+	add_test(NAME Regression-test-OMP COMMAND regression-OMP.sh ${OMPEXEC} ${OMPEXEC_NUMTHREADS_FLAG} ../ljmd.omp.x)
+endif()
+
 # does it create the file write.ppm?
 #file(WRITE ${CMAKE_BINARY_DIR}/test_write.sh "rm -f *.ppm && ./canvas-draw && test -f white.ppm")
 #add_test(NAME Writes COMMAND bash test_write.sh)
