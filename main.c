@@ -30,12 +30,11 @@ int main(int argc, char** argv) {
     assert(check == MPI_SUCCESS);
 
     mdsys_t sys;
-    MPI_Comm tmp = MPI_COMM_WORLD;
-    sys.comm = &tmp;
+    sys.comm = MPI_COMM_WORLD;
 
-    check = MPI_Comm_size(*((MPI_Comm*)sys.comm), &sys.nranks);
+    check = MPI_Comm_size(sys.comm, &sys.nranks);
     assert(check == MPI_SUCCESS);
-    check = MPI_Comm_rank(*((MPI_Comm*)sys.comm), &sys.rank);
+    check = MPI_Comm_rank(sys.comm, &sys.rank);
     assert(check == MPI_SUCCESS);
 
     if (!sys.rank) {
@@ -51,30 +50,31 @@ int main(int argc, char** argv) {
         assert(check == 0);
     }
 
+    // TODO: refactor in a mdsys_synch
     int nreqs = 0;
     MPI_Request reqs[9];
     MPI_Status statuses[9];
     // broadcasts of mdsys parameters
     // int natoms, nfi, nsteps;
-    check = MPI_Ibcast(&(sys.natoms), 1, MPI_INT, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.natoms), 1, MPI_INT, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ibcast(&(sys.nfi), 1, MPI_INT, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.nfi), 1, MPI_INT, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ibcast(&(sys.nsteps), 1, MPI_INT, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.nsteps), 1, MPI_INT, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     // double dt, mass, epsilon, sigma, box, rcut;
-    check = MPI_Ibcast(&(sys.dt), 1, MPI_DOUBLE, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.dt), 1, MPI_DOUBLE, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ibcast(&(sys.mass), 1, MPI_DOUBLE, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.mass), 1, MPI_DOUBLE, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ibcast(&(sys.epsilon), 1, MPI_DOUBLE, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.epsilon), 1, MPI_DOUBLE, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ibcast(&(sys.sigma), 1, MPI_DOUBLE, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.sigma), 1, MPI_DOUBLE, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ibcast(&(sys.box), 1, MPI_DOUBLE, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.box), 1, MPI_DOUBLE, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ibcast(&(sys.rcut), 1, MPI_DOUBLE, 0, *((MPI_Comm*)sys.comm), reqs + nreqs++);
+    check = MPI_Ibcast(&(sys.rcut), 1, MPI_DOUBLE, 0, sys.comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     check = MPI_Waitall(nreqs, reqs, statuses);

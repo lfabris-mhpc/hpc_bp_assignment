@@ -1,5 +1,8 @@
-#include <mpi.h>
 #include <omp.h>
+
+#if !defined(__cplusplus)
+#include <mpi.h>
+#endif
 
 #include "engine.h"
 
@@ -93,11 +96,11 @@ void force_mpi_basic(mdsys_t* sys) {
     azzero(sys->pfy, sys->natoms);
     azzero(sys->pfz, sys->natoms);
 
-    int check = MPI_Bcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm));
+    int check = MPI_Bcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, sys->comm);
     assert(check == MPI_SUCCESS);
-    check = MPI_Bcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm));
+    check = MPI_Bcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, sys->comm);
     assert(check == MPI_SUCCESS);
-    check = MPI_Bcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm));
+    check = MPI_Bcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm);
     assert(check == MPI_SUCCESS);
 
     // this is unbalanced
@@ -131,16 +134,13 @@ void force_mpi_basic(mdsys_t* sys) {
         }
     }
 
-    check =
-        MPI_Reduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm));
+    check = MPI_Reduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Reduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm));
+    check = MPI_Reduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Reduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm));
+    check = MPI_Reduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm);
     assert(check == MPI_SUCCESS);
-    check = MPI_Reduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm));
+    check = MPI_Reduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm);
     assert(check == MPI_SUCCESS);
 }
 
@@ -149,14 +149,11 @@ void force_mpi_ibasic(mdsys_t* sys) {
     MPI_Request reqs[4];
     MPI_Status statuses[4];
 
-    int check =
-        MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    int check = MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     /* zero energy and forces */
@@ -201,17 +198,16 @@ void force_mpi_ibasic(mdsys_t* sys) {
 
     nreqs = 0;
 
-    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm),
+    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
                         reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     check = MPI_Waitall(nreqs, reqs, statuses);
@@ -223,14 +219,11 @@ void force_mpi_ibasic_even(mdsys_t* sys) {
     MPI_Request reqs[4];
     MPI_Status statuses[4];
 
-    int check =
-        MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    int check = MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     /* zero energy and forces */
@@ -273,17 +266,16 @@ void force_mpi_ibasic_even(mdsys_t* sys) {
 
     nreqs = 0;
 
-    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm),
+    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
                         reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     check = MPI_Waitall(nreqs, reqs, statuses);
@@ -295,14 +287,11 @@ void force_mpi_primitive(mdsys_t* sys) {
     MPI_Request reqs[4];
     MPI_Status statuses[4];
 
-    int check =
-        MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    int check = MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     const int begin = sys->rank * (sys->natoms / sys->nranks);
@@ -352,17 +341,16 @@ void force_mpi_primitive(mdsys_t* sys) {
 
     nreqs = 0;
 
-    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm),
+    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
                         reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     check = MPI_Waitall(nreqs, reqs, statuses);
@@ -378,14 +366,11 @@ void force_mpi_slice(mdsys_t* sys) {
     MPI_Request reqs[4];
     MPI_Status statuses[4];
 
-    int check =
-        MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    int check = MPI_Ibcast(sys->rx, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->ry, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check =
-        MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+    check = MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     /* zero energy and forces */
@@ -427,16 +412,15 @@ void force_mpi_slice(mdsys_t* sys) {
     nreqs = 0;
 
     check = MPI_Igatherv(sys->pfx, count, MPI_DOUBLE, sys->fx, sys->counts, sys->displs, MPI_DOUBLE,
-                         0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                         0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Igatherv(sys->pfy, count, MPI_DOUBLE, sys->fy, sys->counts, sys->displs, MPI_DOUBLE,
-                         0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                         0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Igatherv(sys->pfz, count, MPI_DOUBLE, sys->fz, sys->counts, sys->displs, MPI_DOUBLE,
-                         0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                         0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm),
-                        reqs + nreqs++);
+    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     check = MPI_Waitall(nreqs, reqs, statuses);
@@ -452,13 +436,13 @@ void force_mpi_ring(mdsys_t* sys) {
 
     // init the first send buffers with a scatterv
     int check = MPI_Iscatterv(sys->rx, sys->counts, sys->displs, MPI_DOUBLE, sys->srx, count,
-                              MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                              MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Iscatterv(sys->ry, sys->counts, sys->displs, MPI_DOUBLE, sys->sry, count,
-                          MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                          MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Iscatterv(sys->rz, sys->counts, sys->displs, MPI_DOUBLE, sys->srz, count,
-                          MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                          MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     /*
     int check = MPI_Scatterv(sys->rx, sys->counts, sys->displs, MPI_DOUBLE, sys->srx, count,
@@ -499,24 +483,24 @@ void force_mpi_ring(mdsys_t* sys) {
         MPI_Request reqs_iter[6];
         MPI_Status statuses_iter[6];
 
-        check = MPI_Isend(sys->srx, sendcount, MPI_DOUBLE, nextrank, sys->rank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Isend(sys->srx, sendcount, MPI_DOUBLE, nextrank, sys->rank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Isend(sys->sry, sendcount, MPI_DOUBLE, nextrank, sys->rank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Isend(sys->sry, sendcount, MPI_DOUBLE, nextrank, sys->rank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Isend(sys->srz, sendcount, MPI_DOUBLE, nextrank, sys->rank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Isend(sys->srz, sendcount, MPI_DOUBLE, nextrank, sys->rank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
 
-        check = MPI_Irecv(sys->rrx, recvcount, MPI_DOUBLE, prevrank, prevrank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Irecv(sys->rrx, recvcount, MPI_DOUBLE, prevrank, prevrank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Irecv(sys->rry, recvcount, MPI_DOUBLE, prevrank, prevrank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Irecv(sys->rry, recvcount, MPI_DOUBLE, prevrank, prevrank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Irecv(sys->rrz, recvcount, MPI_DOUBLE, prevrank, prevrank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Irecv(sys->rrz, recvcount, MPI_DOUBLE, prevrank, prevrank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
 
         for (int i = 0; i < count; ++i) {
@@ -597,16 +581,15 @@ void force_mpi_ring(mdsys_t* sys) {
     nreqs = 0;
 
     check = MPI_Igatherv(sys->pfx, count, MPI_DOUBLE, sys->fx, sys->counts, sys->displs, MPI_DOUBLE,
-                         0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                         0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Igatherv(sys->pfy, count, MPI_DOUBLE, sys->fy, sys->counts, sys->displs, MPI_DOUBLE,
-                         0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                         0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Igatherv(sys->pfz, count, MPI_DOUBLE, sys->fz, sys->counts, sys->displs, MPI_DOUBLE,
-                         0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                         0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(&epot, &(sys->epot), 1, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm),
-                        reqs + nreqs++);
+    check = MPI_Ireduce(&epot, &(sys->epot), 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     check = MPI_Waitall(nreqs, reqs, statuses);
@@ -622,13 +605,13 @@ void force_mpi_symmring(mdsys_t* sys) {
 
     // init the first send buffers with a scatterv
     int check = MPI_Iscatterv(sys->rx, sys->counts, sys->displs, MPI_DOUBLE, sys->srx, count,
-                              MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                              MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Iscatterv(sys->ry, sys->counts, sys->displs, MPI_DOUBLE, sys->sry, count,
-                          MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                          MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
     check = MPI_Iscatterv(sys->rz, sys->counts, sys->displs, MPI_DOUBLE, sys->srz, count,
-                          MPI_DOUBLE, 0, *((MPI_Comm*)sys->comm), reqs + nreqs++);
+                          MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     /* zero energy and forces */
@@ -662,24 +645,24 @@ void force_mpi_symmring(mdsys_t* sys) {
         MPI_Request reqs_iter[6];
         MPI_Status statuses_iter[6];
 
-        check = MPI_Isend(sys->srx, sendcount, MPI_DOUBLE, nextrank, sys->rank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Isend(sys->srx, sendcount, MPI_DOUBLE, nextrank, sys->rank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Isend(sys->sry, sendcount, MPI_DOUBLE, nextrank, sys->rank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Isend(sys->sry, sendcount, MPI_DOUBLE, nextrank, sys->rank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Isend(sys->srz, sendcount, MPI_DOUBLE, nextrank, sys->rank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Isend(sys->srz, sendcount, MPI_DOUBLE, nextrank, sys->rank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
 
-        check = MPI_Irecv(sys->rrx, recvcount, MPI_DOUBLE, prevrank, prevrank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Irecv(sys->rrx, recvcount, MPI_DOUBLE, prevrank, prevrank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Irecv(sys->rry, recvcount, MPI_DOUBLE, prevrank, prevrank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Irecv(sys->rry, recvcount, MPI_DOUBLE, prevrank, prevrank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
-        check = MPI_Irecv(sys->rrz, recvcount, MPI_DOUBLE, prevrank, prevrank,
-                          *((MPI_Comm*)sys->comm), reqs_iter + nreqs_iter++);
+        check = MPI_Irecv(sys->rrz, recvcount, MPI_DOUBLE, prevrank, prevrank, sys->comm,
+                          reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
 
         if (other >= sys->rank) {
@@ -776,17 +759,16 @@ void force_mpi_symmring(mdsys_t* sys) {
     // reconstruct full arrays on master, reduce epot
     nreqs = 0;
 
-    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0,
-                        *((MPI_Comm*)sys->comm), reqs + nreqs++);
-    assert(check == MPI_SUCCESS);
-    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, *((MPI_Comm*)sys->comm),
+    check = MPI_Ireduce(sys->pfx, sys->fx, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
                         reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfy, sys->fy, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(sys->pfz, sys->fz, sys->natoms, MPI_DOUBLE, MPI_SUM, 0, sys->comm,
+                        reqs + nreqs++);
+    assert(check == MPI_SUCCESS);
+    check = MPI_Ireduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
     check = MPI_Waitall(nreqs, reqs, statuses);

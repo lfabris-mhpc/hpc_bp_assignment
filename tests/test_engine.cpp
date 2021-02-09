@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <stdlib.h>
 
-#include "mpi.h"
+#include <mpi.h>
 
 extern "C" {
 #include "engine.h"
@@ -117,12 +117,6 @@ TEST(EngineForceMPIBasic, force) {
     check = read_input_file(&sys, stdin, line, restfile, trajfile, ergfile, &nprint);
     assert(check == 0);
 
-    MPI_Comm tmp = MPI_COMM_WORLD;
-    sys.comm = &tmp;
-
-    MPI_Comm_size(*((MPI_Comm*)sys.comm), &sys.nranks);
-    MPI_Comm_rank(*((MPI_Comm*)sys.comm), &sys.rank);
-
     check = mdsys_init(&sys);
     assert(check == 0);
 
@@ -166,5 +160,5 @@ int main(int argc, char** argv) {
     // pass and 1 if some test fails.
     int result = RUN_ALL_TESTS();
 
-    return 0;
+    return result;
 }

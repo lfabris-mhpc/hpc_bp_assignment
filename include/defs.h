@@ -3,7 +3,12 @@
 
 #include <stdlib.h>
 
-//#include <mpi.h>
+#if !defined(__cplusplus)
+#include <mpi.h>
+#else
+struct ompi_communicator_t;
+typedef struct ompi_communicator_t* MPI_Comm;
+#endif
 
 /* generic file- or pathname buffer length */
 #define BLEN 200
@@ -18,8 +23,7 @@ struct _mdsys {
     double *vx, *vy, *vz;
     double *fx, *fy, *fz;
     // MPI
-    // MPI_Comm comm;
-    void* comm;
+    MPI_Comm comm;
     int nranks, rank;
     int *displs, *counts;
     double *pfx, *pfy, *pfz;
