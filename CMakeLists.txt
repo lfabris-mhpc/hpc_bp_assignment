@@ -5,7 +5,7 @@ set(LJMD_VERSION 1.0 CACHE STRING "Floating point number for the current version
 project(ljmd VERSION ${LJMD_VERSION} LANGUAGES C)
 
 #src files
-list(APPEND src_files src/engine.c src/defs.c src/input_output.c src/utilities.c)
+list(APPEND src/engine.c src/defs.c src/input_output.c src/utilities.c)
 
 #basic compiler flags
 list(APPEND ccflags "-Wall" "-Wextra" "-DLJMD_VERSION=${LJMD_VERSION}")
@@ -34,7 +34,12 @@ endif()
 
 #actual targets
 message(STATUS "Setting basic serial targets")
-add_library(ljmd_rt SHARED ${src_files})
+add_library(ljmd_rt SHARED 
+	src/engine.c
+	src/input_output.c
+	src/utilities
+	src/defs.c
+)
 target_include_directories(ljmd_rt PRIVATE include)
 target_link_libraries(ljmd_rt PRIVATE m)
 
@@ -45,7 +50,12 @@ target_compile_options(ljmd.x PRIVATE ${ccflags})
 target_link_libraries(ljmd.x PRIVATE m ljmd_rt)
 
 if(BUILD_CompilerOpt)
-	add_library(ljmd_rt.copt SHARED ${src_files})
+	add_library(ljmd_rt.copt SHARED 
+		src/engine.c
+		src/input_output.c
+		src/utilities.c
+		src/defs.c
+		)
 	#list(APPEND lccflags ${ccflags} ${ccflags_copt})
 	
 	target_include_directories(ljmd_rt.copt PRIVATE include)
@@ -59,7 +69,12 @@ if(BUILD_CompilerOpt)
 endif()
 
 if(BUILD_AlgorithmicOpt)
-	add_library(ljmd_rt.aopt SHARED ${src_files})
+	add_library(ljmd_rt.aopt SHARED 
+		src/engine.c
+		src/input_output.c
+		src/utilities.c
+		src/defs.c
+		)
 	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt})
 	
 	target_include_directories(ljmd_rt.aopt PRIVATE include)
@@ -75,7 +90,12 @@ endif()
 if(BUILD_OpenMP)
 	message(STATUS "Setting up OpenMP targets")
 	
-	add_library(ljmd_rt.omp SHARED ${src_files})
+	add_library(ljmd_rt.omp SHARED 
+		src/engine.c
+		src/input_ouput.c
+		src/utilities.c
+		src/defs.c
+		)
 	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_omp})
 	
 	target_compile_options(ljmd_rt.omp PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_omp})
@@ -94,7 +114,12 @@ if(BUILD_MPI)
 	#message(STATUS "Run: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS")
 	#message(STATUS "Libs: ${MPI_INCLUDE_DIRS} ${MPI_C}")
 	
-	add_library(ljmd_rt.mpi SHARED ${src_files})
+	add_library(ljmd_rt.mpi SHARED 
+		src/engine.c
+		src/input_ouput.c
+		src/utilities.c
+		src/defs.c
+		)
 	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi})
 	
 	target_compile_options(ljmd_rt.mpi PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi})
@@ -111,7 +136,12 @@ endif()
 if(BUILD_HYBRID)
 	message(STATUS "Setting up hybrid MPI+OpenMP targets")
 	
-	add_library(ljmd_rt.hybrid SHARED ${src_files})
+	add_library(ljmd_rt.hybrid SHARED 
+		src/engine.c
+		src/input_output.c
+		src/utilities.c
+		src/defs.c
+		)
 	#list(APPEND lccflags ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi} ${ccflags_omp})
 
 	target_compile_options(ljmd_rt.hybrid PRIVATE ${ccflags} ${ccflags_copt} ${ccflags_aopt} ${ccflags_mpi} ${ccflags_omp})

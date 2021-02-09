@@ -7,7 +7,6 @@ add_test(NAME Dry-run-test COMMAND echo "" > ../ljmd.x)
 file(COPY ../examples DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ../reference DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY regression.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#file(COPY regression_OMP.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_test(NAME Regression-test COMMAND regression.sh)
 
@@ -26,10 +25,10 @@ target_link_libraries(test_engine.x PRIVATE GTest::GTestMain GTest::GTest ljmd_r
 
 add_test(NAME Unit-test-engine COMMAND echo "argon_2.inp" > test_engine.x)
 
-if(BUILD_OPENMP)
+if(BUILD_MPI)
 	file(COPY regression-OMP.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-	add_test(NAME Regression-test-OMP COMMAND regression-OMP.sh ${OMPEXEC} ${OMPEXEC_NUMTHREADS_FLAG} ../ljmd.omp.x)
+	add_test(NAME Regression-test-OMP COMMAND regression-OMP.sh ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ../ljmd.omp.x)
 endif()
 
 # does it create the file write.ppm?
