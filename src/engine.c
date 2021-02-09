@@ -60,32 +60,50 @@ void force(mdsys_t* sys) {
     }
 }
 
-// must tweak
-void force_from_slices(mdsys_t* sys, const int ibegin, const int iend, const int jbegin,
-                       const int jend, double* irx, double* iry, double* irz, double* jrx,
-                       double* jry, double* jrz, double* epot, double* pfx, double* pfy,
-                       double* pfz) {
-    for (int i = ibegin; i < iend; ++i) {
-        for (int j = jbegin; j < iend; ++j) {
-            /* get distance between particle i and j */
-            const double rx = pbc(irx[i] - jrx[j], 0.5 * sys->box);
-            const double ry = pbc(iry[i] - jry[j], 0.5 * sys->box);
-            const double rz = pbc(irz[i] - jrz[j], 0.5 * sys->box);
-            const double r = sqrt(rx * rx + ry * ry + rz * rz);
+void force_pair(mdsys_t* sys, double* irx, double* iry, double* irz, double* jrx, double* jry,
+                double* jrz, double* epot, double* ipfx, double* ipfy, double* ipfz) {
+    /* get distance between particle i and j */
+    const double rx = pbc(*irx - *jrx, 0.5 * sys->box);
+    const double ry = pbc(*iry - *jry, 0.5 * sys->box);
+    const double rz = pbc(*irz - *jrz, 0.5 * sys->box);
+    const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-            /* compute force and energy if within cutoff */
-            if (r < sys->rcut) {
-                const double ffac = -4.0 * sys->epsilon *
-                    (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
+    /* compute force and energy if within cutoff */
+    if (r < sys->rcut) {
+        const double ffac = -4.0 * sys->epsilon *
+            (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
 
-                *epot += 0.5 * 4.0 * sys->epsilon *
-                    (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+        *epot += 0.5 * 4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
 
-                pfx[i - ibegin] += rx / r * ffac;
-                pfy[i - ibegin] += ry / r * ffac;
-                pfz[i - ibegin] += rz / r * ffac;
-            }
-        }
+        *ipfx += rx / r * ffac;
+        *ipfy += ry / r * ffac;
+        *ipfz += rz / r * ffac;
+    }
+}
+
+void force_pair_symmetric(mdsys_t* sys, double* irx, double* iry, double* irz, double* jrx,
+                          double* jry, double* jrz, double* epot, double* ipfx, double* ipfy,
+                          double* ipfz, double* jpfx, double* jpfy, double* jpfz) {
+    /* get distance between particle i and j */
+    const double rx = pbc(*irx - *jrx, 0.5 * sys->box);
+    const double ry = pbc(*iry - *jry, 0.5 * sys->box);
+    const double rz = pbc(*irz - *jrz, 0.5 * sys->box);
+    const double r = sqrt(rx * rx + ry * ry + rz * rz);
+
+    /* compute force and energy if within cutoff */
+    if (r < sys->rcut) {
+        const double ffac = -4.0 * sys->epsilon *
+            (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
+
+        *epot += 4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+
+        *ipfx += rx / r * ffac;
+        *ipfy += ry / r * ffac;
+        *ipfz += rz / r * ffac;
+
+        *jpfx -= rx / r * ffac;
+        *jpfy -= ry / r * ffac;
+        *jpfz -= rz / r * ffac;
     }
 }
 
@@ -103,20 +121,23 @@ void force_mpi_basic(mdsys_t* sys) {
     check = MPI_Bcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm);
     assert(check == MPI_SUCCESS);
 
-    // this is unbalanced
     for (int i = 0; i < (sys->natoms - 1); i += sys->nranks) {
         int ii = i + sys->rank;
         if (ii >= (sys->natoms - 1))
             break;
 
         for (int j = ii + 1; j < sys->natoms; ++j) {
-            /* get distance between particle i and j */
+            force_pair_symmetric(sys, sys->rx + ii, sys->ry + ii, sys->rz + ii, sys->rx + j,
+                                 sys->ry + j, sys->rz + j, &epot, sys->pfx + ii, sys->pfy + ii,
+                                 sys->pfz + ii, sys->pfx + j, sys->pfy + j, sys->pfz + j);
+            /*
+            // get distance between particle i and j
             const double rx = pbc(sys->rx[ii] - sys->rx[j], 0.5 * sys->box);
             const double ry = pbc(sys->ry[ii] - sys->ry[j], 0.5 * sys->box);
             const double rz = pbc(sys->rz[ii] - sys->rz[j], 0.5 * sys->box);
             const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-            /* compute force and energy if within cutoff */
+            // compute force and energy if within cutoff
             if (r < sys->rcut) {
                 const double ffac = -4.0 * sys->epsilon *
                     (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
@@ -131,6 +152,7 @@ void force_mpi_basic(mdsys_t* sys) {
                 sys->pfy[j] -= ry / r * ffac;
                 sys->pfz[j] -= rz / r * ffac;
             }
+            */
         }
     }
 
@@ -172,13 +194,17 @@ void force_mpi_ibasic(mdsys_t* sys) {
             break;
 
         for (int j = ii + 1; j < sys->natoms; ++j) {
-            /* get distance between particle i and j */
+            force_pair_symmetric(sys, sys->rx + ii, sys->ry + ii, sys->rz + ii, sys->rx + j,
+                                 sys->ry + j, sys->rz + j, &epot, sys->pfx + ii, sys->pfy + ii,
+                                 sys->pfz + ii, sys->pfx + j, sys->pfy + j, sys->pfz + j);
+            /*
+            // get distance between particle i and j
             const double rx = pbc(sys->rx[ii] - sys->rx[j], 0.5 * sys->box);
             const double ry = pbc(sys->ry[ii] - sys->ry[j], 0.5 * sys->box);
             const double rz = pbc(sys->rz[ii] - sys->rz[j], 0.5 * sys->box);
             const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-            /* compute force and energy if within cutoff */
+            // compute force and energy if within cutoff
             if (r < sys->rcut) {
                 const double ffac = -4.0 * sys->epsilon *
                     (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
@@ -193,6 +219,7 @@ void force_mpi_ibasic(mdsys_t* sys) {
                 sys->pfy[j] -= ry / r * ffac;
                 sys->pfz[j] -= rz / r * ffac;
             }
+            */
         }
     }
 
@@ -240,13 +267,17 @@ void force_mpi_ibasic_even(mdsys_t* sys) {
 
     for (int i = ibegin; i < iend; ++i) {
         for (int j = i + 1; j < sys->natoms; ++j) {
-            /* get distance between particle i and j */
+            force_pair_symmetric(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j,
+                                 sys->ry + j, sys->rz + j, &epot, sys->pfx + i, sys->pfy + i,
+                                 sys->pfz + i, sys->pfx + j, sys->pfy + j, sys->pfz + j);
+            /*
+            // get distance between particle i and j
             const double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
             const double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
             const double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
             const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-            /* compute force and energy if within cutoff */
+            // compute force and energy if within cutoff
             if (r < sys->rcut) {
                 const double ffac = -4.0 * sys->epsilon *
                     (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
@@ -261,6 +292,7 @@ void force_mpi_ibasic_even(mdsys_t* sys) {
                 sys->pfy[j] -= ry / r * ffac;
                 sys->pfz[j] -= rz / r * ffac;
             }
+            */
         }
     }
 
@@ -299,9 +331,6 @@ void force_mpi_primitive(mdsys_t* sys) {
     if (end > sys->natoms) {
         end = sys->natoms;
     }
-    // const int count = sys->counts[sys->rank];
-    // const int begin = sys->displs[sys->rank];
-    // const int end = begin + count;
 
     double epot = 0.0;
     azzero(sys->pfx, sys->natoms);
@@ -318,13 +347,15 @@ void force_mpi_primitive(mdsys_t* sys) {
         for (int j = 0; j < (sys->natoms); ++j) {
             if (i == j)
                 continue;
-
+            force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j, sys->ry + j,
+                       sys->rz + j, &epot, sys->pfx + i, sys->pfy + i, sys->pfz + i);
+            /*
             const double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
             const double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
             const double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
             const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-            /* compute force and energy if within cutoff */
+            // compute force and energy if within cutoff
             if (r < sys->rcut) {
                 const double ffac = -4.0 * sys->epsilon *
                     (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
@@ -336,6 +367,7 @@ void force_mpi_primitive(mdsys_t* sys) {
                 sys->pfy[i] += ry / r * ffac;
                 sys->pfz[i] += rz / r * ffac;
             }
+            */
         }
     }
 
@@ -386,14 +418,17 @@ void force_mpi_slice(mdsys_t* sys) {
         for (int j = 0; j < sys->natoms; ++j) {
             if (i == j)
                 continue;
-
-            /* get distance between particle i and j */
+            force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j, sys->ry + j,
+                       sys->rz + j, &epot, sys->pfx + i - begin, sys->pfy + i - begin,
+                       sys->pfz + i - begin);
+            /*
+            // get distance between particle i and j
             const double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
             const double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
             const double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
             const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-            /* compute force and energy if within cutoff */
+            // compute force and energy if within cutoff
             if (r < sys->rcut) {
                 const double ffac = -4.0 * sys->epsilon *
                     (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
@@ -405,6 +440,7 @@ void force_mpi_slice(mdsys_t* sys) {
                 sys->pfy[i - begin] += ry / r * ffac;
                 sys->pfz[i - begin] += rz / r * ffac;
             }
+            */
         }
     }
 
@@ -444,15 +480,6 @@ void force_mpi_ring(mdsys_t* sys) {
     check = MPI_Iscatterv(sys->rz, sys->counts, sys->displs, MPI_DOUBLE, sys->srz, count,
                           MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
-    /*
-    int check = MPI_Scatterv(sys->rx, sys->counts, sys->displs, MPI_DOUBLE, sys->srx, count,
-    MPI_DOUBLE, 0, *((MPI_Comm*) sys->comm)); assert(check == MPI_SUCCESS); check =
-    MPI_Scatterv(sys->ry, sys->counts, sys->displs, MPI_DOUBLE, sys->sry, count, MPI_DOUBLE, 0,
-    *((MPI_Comm*) sys->comm)); assert(check
-    == MPI_SUCCESS); check = MPI_Scatterv(sys->rz, sys->counts, sys->displs, MPI_DOUBLE, sys->srz,
-    count, MPI_DOUBLE, 0, *((MPI_Comm*) sys->comm)); assert(check == MPI_SUCCESS); tcomm +=
-    MPI_Wtime();
-    */
 
     /* zero energy and forces */
     double epot = 0.0;
@@ -507,14 +534,16 @@ void force_mpi_ring(mdsys_t* sys) {
             for (int j = 0; j < sendcount; ++j) {
                 if ((other == sys->rank) && (i == j))
                     continue;
-
-                /* get distance between particle i and j */
+                force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j, sys->ry + j,
+                           sys->rz + j, &epot, sys->pfx + i, sys->pfy + i, sys->pfz + i);
+                /*
+                // get distance between particle i and j
                 const double rx = pbc(sys->rx[i] - sys->srx[j], 0.5 * sys->box);
                 const double ry = pbc(sys->ry[i] - sys->sry[j], 0.5 * sys->box);
                 const double rz = pbc(sys->rz[i] - sys->srz[j], 0.5 * sys->box);
                 const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-                /* compute force and energy if within cutoff */
+                // compute force and energy if within cutoff
                 if (r < sys->rcut) {
                     const double ffac = -4.0 * sys->epsilon *
                         (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
@@ -526,6 +555,7 @@ void force_mpi_ring(mdsys_t* sys) {
                     sys->pfy[i] += ry / r * ffac;
                     sys->pfz[i] += rz / r * ffac;
                 }
+                */
             }
         }
 
@@ -555,14 +585,16 @@ void force_mpi_ring(mdsys_t* sys) {
         for (int j = 0; j < sendcount; ++j) {
             if ((other == sys->rank) && (i == j))
                 continue;
-
-            /* get distance between particle i and j */
+            force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j, sys->ry + j,
+                       sys->rz + j, &epot, sys->pfx + i, sys->pfy + i, sys->pfz + i);
+            /*
+            // get distance between particle i and j
             const double rx = pbc(sys->rx[i] - sys->srx[j], 0.5 * sys->box);
             const double ry = pbc(sys->ry[i] - sys->sry[j], 0.5 * sys->box);
             const double rz = pbc(sys->rz[i] - sys->srz[j], 0.5 * sys->box);
             const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-            /* compute force and energy if within cutoff */
+            // compute force and energy if within cutoff
             if (r < sys->rcut) {
                 const double ffac = -4.0 * sys->epsilon *
                     (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
@@ -574,6 +606,7 @@ void force_mpi_ring(mdsys_t* sys) {
                 sys->pfy[i] += ry / r * ffac;
                 sys->pfz[i] += rz / r * ffac;
             }
+            */
         }
     }
 
@@ -672,30 +705,36 @@ void force_mpi_symmring(mdsys_t* sys) {
                 for (int j = 0; j < sendcount; ++j) {
                     if ((other == sys->rank) && (i >= j))
                         continue;
+                    force_pair_symmetric(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j,
+                                         sys->ry + j, sys->rz + j, &epot, sys->pfx + ibegin + i,
+                                         sys->pfy + ibegin + i, sys->pfz + ibegin + i,
+                                         sys->pfx + jbegin + j, sys->pfy + jbegin + j,
+                                         sys->pfz + jbegin + j);
+                    /*
+                        // get distance between particle i and j
+                        const double rx = pbc(sys->rx[i] - sys->srx[j], 0.5 * sys->box);
+                        const double ry = pbc(sys->ry[i] - sys->sry[j], 0.5 * sys->box);
+                        const double rz = pbc(sys->rz[i] - sys->srz[j], 0.5 * sys->box);
+                        const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-                    /* get distance between particle i and j */
-                    const double rx = pbc(sys->rx[i] - sys->srx[j], 0.5 * sys->box);
-                    const double ry = pbc(sys->ry[i] - sys->sry[j], 0.5 * sys->box);
-                    const double rz = pbc(sys->rz[i] - sys->srz[j], 0.5 * sys->box);
-                    const double r = sqrt(rx * rx + ry * ry + rz * rz);
+                        // compute force and energy if within cutoff
+                        if (r < sys->rcut) {
+                            const double ffac = -4.0 * sys->epsilon *
+                                (-12.0 * pow(sys->sigma / r, 12.0) / r +
+                                 6 * pow(sys->sigma / r, 6.0) / r);
 
-                    /* compute force and energy if within cutoff */
-                    if (r < sys->rcut) {
-                        const double ffac = -4.0 * sys->epsilon *
-                            (-12.0 * pow(sys->sigma / r, 12.0) / r +
-                             6 * pow(sys->sigma / r, 6.0) / r);
+                            epot += 4.0 * sys->epsilon *
+                                (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
 
-                        epot += 4.0 * sys->epsilon *
-                            (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+                            sys->pfx[ibegin + i] += rx / r * ffac;
+                            sys->pfy[ibegin + i] += ry / r * ffac;
+                            sys->pfz[ibegin + i] += rz / r * ffac;
 
-                        sys->pfx[ibegin + i] += rx / r * ffac;
-                        sys->pfy[ibegin + i] += ry / r * ffac;
-                        sys->pfz[ibegin + i] += rz / r * ffac;
-
-                        sys->pfx[jbegin + j] -= rx / r * ffac;
-                        sys->pfy[jbegin + j] -= ry / r * ffac;
-                        sys->pfz[jbegin + j] -= rz / r * ffac;
-                    }
+                            sys->pfx[jbegin + j] -= rx / r * ffac;
+                            sys->pfy[jbegin + j] -= ry / r * ffac;
+                            sys->pfz[jbegin + j] -= rz / r * ffac;
+                        }
+                    */
                 }
             }
         }
@@ -729,20 +768,26 @@ void force_mpi_symmring(mdsys_t* sys) {
             for (int j = 0; j < sendcount; ++j) {
                 if ((other == sys->rank) && (i >= j))
                     continue;
-
-                /* get distance between particle i and j */
+                force_pair_symmetric(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j,
+                                     sys->ry + j, sys->rz + j, &epot, sys->pfx + ibegin + i,
+                                     sys->pfy + ibegin + i, sys->pfz + ibegin + i,
+                                     sys->pfx + jbegin + j, sys->pfy + jbegin + j,
+                                     sys->pfz + jbegin + j);
+                /*
+                // get distance between particle i and j
                 const double rx = pbc(sys->rx[i] - sys->srx[j], 0.5 * sys->box);
                 const double ry = pbc(sys->ry[i] - sys->sry[j], 0.5 * sys->box);
                 const double rz = pbc(sys->rz[i] - sys->srz[j], 0.5 * sys->box);
                 const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-                /* compute force and energy if within cutoff */
+                // compute force and energy if within cutoff
                 if (r < sys->rcut) {
                     const double ffac = -4.0 * sys->epsilon *
-                        (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
+                        (-12.0 * pow(sys->sigma / r, 12.0) / r +
+                         6 * pow(sys->sigma / r, 6.0) / r);
 
-                    epot +=
-                        4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+                    epot += 4.0 * sys->epsilon *
+                        (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
 
                     sys->pfx[ibegin + i] += rx / r * ffac;
                     sys->pfy[ibegin + i] += ry / r * ffac;
@@ -752,6 +797,7 @@ void force_mpi_symmring(mdsys_t* sys) {
                     sys->pfy[jbegin + j] -= ry / r * ffac;
                     sys->pfz[jbegin + j] -= rz / r * ffac;
                 }
+                */
             }
         }
     }

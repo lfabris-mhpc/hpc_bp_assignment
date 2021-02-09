@@ -10,6 +10,13 @@ void ekin(mdsys_t* sys);
 
 void force(mdsys_t* sys);
 
+void force_pair(mdsys_t* sys, double* irx, double* iry, double* irz, double* jrx, double* jry,
+                double* jrz, double* epot, double* ipfx, double* ipfy, double* ipfz);
+
+void force_pair_symmetric(mdsys_t* sys, double* irx, double* iry, double* irz, double* jrx,
+                          double* jry, double* jrz, double* epot, double* ipfx, double* ipfy,
+                          double* ipfz, double* jpfx, double* jpfy, double* jpfz);
+
 void force_mpi_basic(mdsys_t* sys);
 
 void force_mpi_ibasic(mdsys_t* sys);
