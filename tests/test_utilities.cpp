@@ -52,3 +52,53 @@ TEST(UtilitiesPBC, sequentialPBC) {
         ASSERT_LE(contracted, radius_inner);
     }
 }
+
+TEST(UtilitiesInitDisplsCounts, Consistency) {
+    constexpr int nsizes = 2;
+    int natomsv[nsizes] = { 11, 40 };
+
+    for (int i = 0; i < nsizes; ++i) {
+        for (int nranks = 1; nranks < 5; ++nranks) {
+            int displs[nranks];
+            int counts[nranks];
+
+            init_displs_counts(natomsv[i], nranks, displs, counts);
+
+            ASSERT_EQ(displs[0], 0);
+            ASSERT_GE(counts[0], 0);
+
+            int sum = counts[0];
+            for (int j = 1; j < nranks; ++j) {
+                ASSERT_EQ(displs[j - 1] + counts[j - 1], displs[j]);
+                sum += counts[j];
+            }
+
+            ASSERT_EQ(sum, natomsv[i]);
+        }
+    }
+}
+
+TEST(UtilitiesInitDisplsCountsEven, consistency) {
+    constexpr int nsizes = 2;
+    int natomsv[nsizes] = { 11, 40 };
+
+    for (int i = 0; i < nsizes; ++i) {
+        for (int nranks = 1; nranks < 5; ++nranks) {
+            int displs[nranks];
+            int counts[nranks];
+
+            init_displs_counts(natomsv[i], nranks, displs, counts);
+
+            ASSERT_EQ(displs[0], 0);
+            ASSERT_GE(counts[0], 0);
+
+            int sum = counts[0];
+            for (int j = 1; j < nranks; ++j) {
+                ASSERT_EQ(displs[j - 1] + counts[j - 1], displs[j]);
+                sum += counts[j];
+            }
+
+            ASSERT_EQ(sum, natomsv[i]);
+        }
+    }
+}

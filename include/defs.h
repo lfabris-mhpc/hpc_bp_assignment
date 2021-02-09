@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#include <mpi.h>
+//#include <mpi.h>
 
 /* generic file- or pathname buffer length */
 #define BLEN 200
@@ -18,7 +18,8 @@ struct _mdsys {
     double *vx, *vy, *vz;
     double *fx, *fy, *fz;
     // MPI
-    MPI_Comm comm;
+    // MPI_Comm comm;
+    void* comm;
     int nranks, rank;
     int *displs, *counts;
     double *pfx, *pfy, *pfz;
