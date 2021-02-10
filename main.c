@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     // initialize forces and energies.
     sys.nfi = 0;
 
-    force_openmp_nonew(&sys);
+    force_openmp(&sys);
 
     ekin(&sys);
 
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         /* propagate system and recompute energies */
         verlet_1(&sys);
 
-        force_openmp_nonew(&sys);
+        force_openmp(&sys);
        
         verlet_2(&sys);
 
