@@ -159,4 +159,57 @@ void force_openmp(mdsys_t* sys) {
 	sys->epot = epot;
 }
 
+//compute force using threads NO 3rd Newton law
+void force_openmp_nonew(mdsys_t* sys) {
 
+    azzero(sys->fx, sys->natoms);
+    azzero(sys->fy, sys->natoms);
+    azzero(sys->fz, sys->natoms);
+
+    double epot = 0.0;
+    double *fx = sys->fx;
+    double *fy = sys->fy;
+    double *fz = sys->fz;
+
+	#pragma omp parallel shared(sys) reduction(+:epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
+    	{
+//		const int nthreads = omp_get_num_threads();
+//		const int tid = omp_get_thread_num();	
+
+//		if(tid == 0){
+//			printf("numthreads=%d", nthreads);
+//		}
+    
+	    //Third Newton law: eliminate if(i==j)/
+	    for (int i = 0; i < (sys->natoms); ++i) {		    
+        	for (int j = 0; j < (sys->natoms); ++j) {
+            // particles have no interactions with themselves 
+			if (i == j){
+		                continue;
+			}
+
+	            // get distance between particle i and j 
+        	    const double rx = pbc(sys->rx[ii] - sys->rx[j], 0.5 * sys->box);
+	            const double ry = pbc(sys->ry[ii] - sys->ry[j], 0.5 * sys->box);
+        	    const double rz = pbc(sys->rz[ii] - sys->rz[j], 0.5 * sys->box);
+	            const double r = sqrt(rx * rx + ry * ry + rz * rz);
+
+        	    // compute force and energy if within cutoff 
+	            if (r < sys->rcut) {
+        	        const double ffac = -4.0 * sys->epsilon *
+                	    (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
+
+	                epot += 4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+
+	                fx[ii] += rx / r * ffac;
+        	        fy[ii] += ry / r * ffac;
+	                fz[ii] += rz / r * ffac;
+
+		    }
+		}
+	    }
+	 
+	}
+	   
+	sys->epot = epot;
+}
