@@ -6,7 +6,6 @@
 #include "utilities.h"
 
 #include <omp.h>
-#include <mpi.h>
 
 /* a few physical constants */
 const double kboltz = 0.0019872067; /* boltzman constant in kcal/mol/K */
