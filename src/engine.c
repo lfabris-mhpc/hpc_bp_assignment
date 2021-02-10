@@ -207,3 +207,5 @@ void force_openmp_nonew(mdsys_t* sys) {
 	   
 	sys->epot = epot;
 }
+
+

@@ -106,3 +106,5 @@ TEST(EngineForce, force_openmp) {
     ASSERT_DOUBLE_EQ(sys.fy[1], -Fy_byhand);
     ASSERT_DOUBLE_EQ(sys.fz[1], -Fz_byhand);
 }
+
+
