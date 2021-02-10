@@ -113,6 +113,10 @@ void force_openmp(mdsys_t* sys) {
     	{
 		const int nthreads = omp_get_num_threads();
 		const int tid = omp_get_thread_num();	
+
+//		if(tid == 0){
+//			printf("numthreads=%d", nthreads);
+//		}
     
 	    //Third Newton law: eliminate if(i==j)/
 	    for (int i = 0; i < (sys->natoms)-1; i += nthreads) {

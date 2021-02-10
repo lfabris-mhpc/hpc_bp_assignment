@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     int nthreads, tid;
 
 
-    printf("LJMD version %3.1f\n", LJMD_VERSION);
+//    printf("LJMD version %3.1f\n", LJMD_VERSION);
 
 
     t_start = wallclock();
