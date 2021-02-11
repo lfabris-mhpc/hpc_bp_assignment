@@ -15,7 +15,6 @@
 #include "utilities.h"
 
 #include <omp.h>
-#include <mpi.h>
 
 int main(int argc, char** argv) {
     int nprint, check;
@@ -25,9 +24,7 @@ int main(int argc, char** argv) {
     double t_start;
     int nthreads, tid;
 
-
     printf("LJMD version %3.1f\n", LJMD_VERSION);
-
 
     t_start = wallclock();
 
@@ -39,28 +36,6 @@ int main(int argc, char** argv) {
 
     check = read_restart(&sys, restfile);
     assert(check == 0);
-
-#ifdef _OPENMP    
-    //allocate memory
-    #pragma omp parallel
-    {
-
-    nthreads = omp_get_num_threads();
-    tid = omp_get_thread_num();
-    printf("Using nthreads=%d, tid=%d\n", nthreads, tid);
-	    sys.rx=(double*)malloc(sys.natoms*sizeof(double));
-	    sys.ry=(double*)malloc(sys.natoms*sizeof(double));
-	    sys.rz=(double*)malloc(sys.natoms*sizeof(double));
-
-	    sys.vx=(double*)malloc(sys.natoms*sizeof(double));
-	    sys.vy=(double*)malloc(sys.natoms*sizeof(double));
-	    sys.vz=(double*)malloc(sys.natoms*sizeof(double));
-
-	    sys.fx=(double*)malloc(nthreads*sys.natoms*sizeof(double));
-	    sys.fy=(double*)malloc(nthreads*sys.natoms*sizeof(double));
-	    sys.fz=(double*)malloc(nthreads*sys.natoms*sizeof(double));
-    }
-#endif
 
     // initialize forces and energies.
     sys.nfi = 0;
@@ -91,7 +66,7 @@ int main(int argc, char** argv) {
         verlet_1(&sys);
 
         force_openmp(&sys);
-       
+
         verlet_2(&sys);
 
         ekin(&sys);

@@ -6,7 +6,6 @@
 #include "utilities.h"
 
 #include <omp.h>
-#include <mpi.h>
 
 /* a few physical constants */
 const double kboltz = 0.0019872067; /* boltzman constant in kcal/mol/K */
@@ -35,13 +34,13 @@ void force(mdsys_t* sys) {
     azzero(sys->fx, sys->natoms);
     azzero(sys->fy, sys->natoms);
     azzero(sys->fz, sys->natoms);
-    
+
     /*Third Newton law: eliminate if(i==j)*/
-    for (i = 0; i < (sys->natoms)-1; ++i) {
-        for (j = i+1; j < (sys->natoms); ++j) {
+    for (i = 0; i < (sys->natoms) - 1; ++i) {
+        for (j = i + 1; j < (sys->natoms); ++j) {
             /* particles have no interactions with themselves */
-//            if (i == j)
-//                continue;
+            //            if (i == j)
+            //                continue;
 
             /* get distance between particle i and j */
             rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
@@ -60,7 +59,7 @@ void force(mdsys_t* sys) {
                 sys->fx[i] += rx / r * ffac;
                 sys->fy[i] += ry / r * ffac;
                 sys->fz[i] += rz / r * ffac;
-	
+
                 sys->fx[j] -= rx / r * ffac;
                 sys->fy[j] -= ry / r * ffac;
                 sys->fz[j] -= rz / r * ffac;
@@ -68,8 +67,6 @@ void force(mdsys_t* sys) {
         }
     }
 }
-
-
 
 /* velocity verlet */
 void verlet_1(mdsys_t* sys) {
@@ -97,63 +94,58 @@ void verlet_2(mdsys_t* sys) {
     }
 }
 
-
 // compute forces using threads/
 void force_openmp(mdsys_t* sys) {
-
     azzero(sys->fx, sys->natoms);
     azzero(sys->fy, sys->natoms);
     azzero(sys->fz, sys->natoms);
 
     double epot = 0.0;
-    double *fx = sys->fx;
-    double *fy = sys->fy;
-    double *fz = sys->fz;
+    double* fx = sys->fx;
+    double* fy = sys->fy;
+    double* fz = sys->fz;
 
-	#pragma omp parallel shared(sys) reduction(+:epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
-    	{
-		const int nthreads = omp_get_num_threads();
-		const int tid = omp_get_thread_num();	
-    
-	    //Third Newton law: eliminate if(i==j)/
-	    for (int i = 0; i < (sys->natoms)-1; i += nthreads) {
-		    int ii = i + tid;
-		    if ( ii >= (sys->natoms) - 1)
-			    break;
+#pragma omp parallel shared(sys) reduction(+:epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
+    {
+        const int nthreads = omp_get_num_threads();
+        const int tid = omp_get_thread_num();
 
-        	for (int j = ii + 1; j < (sys->natoms); ++j) {
-            // particles have no interactions with themselves 
-//            if (i == j)
-//                continue;
+        // Third Newton law: eliminate if(i==j)/
+        for (int i = 0; i < (sys->natoms) - 1; i += nthreads) {
+            int ii = i + tid;
+            if (ii >= (sys->natoms) - 1)
+                break;
 
-	            // get distance between particle i and j 
-        	    const double rx = pbc(sys->rx[ii] - sys->rx[j], 0.5 * sys->box);
-	            const double ry = pbc(sys->ry[ii] - sys->ry[j], 0.5 * sys->box);
-        	    const double rz = pbc(sys->rz[ii] - sys->rz[j], 0.5 * sys->box);
-	            const double r = sqrt(rx * rx + ry * ry + rz * rz);
+            for (int j = ii + 1; j < (sys->natoms); ++j) {
+                // particles have no interactions with themselves
+                //            if (i == j)
+                //                continue;
 
-        	    // compute force and energy if within cutoff 
-	            if (r < sys->rcut) {
-        	        const double ffac = -4.0 * sys->epsilon *
-                	    (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
+                // get distance between particle i and j
+                const double rx = pbc(sys->rx[ii] - sys->rx[j], 0.5 * sys->box);
+                const double ry = pbc(sys->ry[ii] - sys->ry[j], 0.5 * sys->box);
+                const double rz = pbc(sys->rz[ii] - sys->rz[j], 0.5 * sys->box);
+                const double r = sqrt(rx * rx + ry * ry + rz * rz);
 
-	                epot += 4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+                // compute force and energy if within cutoff
+                if (r < sys->rcut) {
+                    const double ffac = -4.0 * sys->epsilon *
+                        (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
 
-	                fx[ii] += rx / r * ffac;
-        	        fy[ii] += ry / r * ffac;
-	                fz[ii] += rz / r * ffac;
+                    epot +=
+                        4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
 
-        	        fx[j] -= rx / r * ffac;
-                	fy[j] -= ry / r * ffac;
-	                fz[j] -= rz / r * ffac;
+                    fx[ii] += rx / r * ffac;
+                    fy[ii] += ry / r * ffac;
+                    fz[ii] += rz / r * ffac;
 
-		    }
-		}
-	    }
-	 
-	}
-	   
-	sys->epot = epot;
+                    fx[j] -= rx / r * ffac;
+                    fy[j] -= ry / r * ffac;
+                    fz[j] -= rz / r * ffac;
+                }
+            }
+        }
+    }
+
+    sys->epot = epot;
 }
-
-

@@ -9,7 +9,8 @@ file(COPY ../reference DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY regression.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 #file(COPY regression_OMP.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-add_test(NAME Regression-test COMMAND regression.sh)
+add_test(NAME Regression-test-serial COMMAND regression.sh 1)
+add_test(NAME Regression-test-multip COMMAND regression.sh 4)
 
 #unit tests
 #utilities
@@ -25,12 +26,6 @@ target_include_directories(test_engine.x PRIVATE ../include)
 target_link_libraries(test_engine.x PRIVATE GTest::GTestMain GTest::GTest ljmd_rt)
 
 add_test(NAME Unit-test-engine COMMAND echo "argon_2.inp" > test_engine.x)
-
-if(BUILD_OPENMP)
-	file(COPY regression-OMP.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-	add_test(NAME Regression-test-OMP COMMAND regression-OMP.sh ${OMPEXEC} ${OMPEXEC_NUMTHREADS_FLAG} ../ljmd.omp.x)
-endif()
 
 # does it create the file write.ppm?
 #file(WRITE ${CMAKE_BINARY_DIR}/test_write.sh "rm -f *.ppm && ./canvas-draw && test -f white.ppm")
