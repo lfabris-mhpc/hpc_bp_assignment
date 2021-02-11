@@ -13,6 +13,8 @@ int read_input_file(mdsys_t* sys, FILE* fin, char* line, char* restfile, char* t
 
 int read_restart(mdsys_t* sys, char* restfile);
 
+int write_restart(mdsys_t* sys, char* restfile);
+
 int get_a_line(FILE* fp, char* buf);
 
 #endif

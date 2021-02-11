@@ -2,7 +2,7 @@
  * simple lennard-jones potential MD code with velocity verlet.
  * units: Length=Angstrom, Mass=amu; Energy=kcal
  *
- * baseline c version.
+ * MPI-enabled c version.
  */
 
 #include <stdio.h>
@@ -23,7 +23,7 @@
 // force_mpi_slice
 // force_mpi_ring
 // force_mpi_symmring
-#define FORCE force_mpi_ibasic_even
+#define FORCE force_mpi_basic
 
 int main(int argc, char** argv) {
     int check = MPI_Init(&argc, &argv);
@@ -83,6 +83,7 @@ int main(int argc, char** argv) {
     check = mdsys_init(&sys);
     assert(check == 0);
 
+#ifdef VERBOSE
     if (!sys.rank) {
         printf("displs: [");
         for (int i = 0; i < sys.nranks; ++i) {
@@ -95,6 +96,7 @@ int main(int argc, char** argv) {
         }
         printf("]\n");
     }
+#endif
 
     if (!sys.rank) {
         check = read_restart(&sys, restfile);
@@ -147,6 +149,9 @@ int main(int argc, char** argv) {
         printf("Simulation Done. Run time: %10.3fs\n", wallclock() - t_start);
         fclose(erg);
         fclose(traj);
+
+        // check = write_restart(&sys, "restart.rest");
+        // assert(check == 0);
     }
 
     MPI_Finalize();
