@@ -23,7 +23,7 @@
 // force_mpi_slice
 // force_mpi_ring
 // force_mpi_symmring
-#define FORCE force_mpi_basic
+#define FORCE force_mpi_ibasic_even
 
 int main(int argc, char** argv) {
     int check = MPI_Init(&argc, &argv);
@@ -83,6 +83,16 @@ int main(int argc, char** argv) {
     check = mdsys_init(&sys);
     assert(check == 0);
 
+    if (!sys.rank) {
+        check = read_restart(&sys, restfile);
+        assert(check == 0);
+    }
+
+    /* initialize forces and energies.*/
+    sys.nfi = 0;
+    FORCE(&sys);
+    ekin(&sys);
+
 #ifdef VERBOSE
     if (!sys.rank) {
         printf("displs: [");
@@ -97,16 +107,6 @@ int main(int argc, char** argv) {
         printf("]\n");
     }
 #endif
-
-    if (!sys.rank) {
-        check = read_restart(&sys, restfile);
-        assert(check == 0);
-    }
-
-    /* initialize forces and energies.*/
-    sys.nfi = 0;
-    FORCE(&sys);
-    ekin(&sys);
 
     FILE* erg = NULL;
     FILE* traj = NULL;

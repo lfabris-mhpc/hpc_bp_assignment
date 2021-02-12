@@ -31,19 +31,16 @@ void init_displs_counts(const int natoms, const int nranks, int* displs, int* co
     assert(counts);
     assert(natoms >= 0);
     assert(nranks > 0);
-    assert(natoms >= nranks);
 
     const int block = natoms / nranks;
     const int rem = natoms % nranks;
 
-    counts[nranks - 1] = block + (rem != 0);
-    displs[nranks - 1] = natoms - counts[nranks - 1];
-
-    for (int i = 1; i < nranks; ++i) {
-        counts[nranks - 1 - i] = block + (i < rem);
-        displs[nranks - 1 - i] = displs[nranks - i] - counts[nranks - 1 - i];
-    }
     displs[0] = 0;
+    counts[0] = block + (rem != 0);
+    for (int i = 1; i < nranks; ++i) {
+        displs[i] = displs[i - 1] + counts[i - 1];
+        counts[i] = block + (i < rem);
+    }
 }
 
 void init_displs_counts_even(const int natoms, const int nranks, int* displs, int* counts) {
@@ -51,24 +48,18 @@ void init_displs_counts_even(const int natoms, const int nranks, int* displs, in
     assert(counts);
     assert(natoms >= 0);
     assert(nranks > 0);
-    assert(natoms >= nranks);
 
     const int target = natoms * (natoms - 1) / (2 * nranks) + 1;
 
-    int atom = natoms;
-    for (int i = nranks - 1; i > 0; --i) {
-        counts[i] = 0;
-        displs[i] = atom;
-
-        int iworkload = 0;
-        while (iworkload < target) {
-            ++(counts[i]);
-            --atom;
-            iworkload += natoms - 1 - atom;
-        }
-        displs[i] = atom;
-    }
-
+    int iatom = 0;
     displs[0] = 0;
-    counts[0] = displs[1];
+    for (int i = 1; i < nranks; ++i) {
+        int work = 0;
+        for (counts[i - 1] = 0; work < target && iatom < natoms; ++iatom) {
+            work += natoms - iatom - 1;
+            ++(counts[i - 1]);
+        }
+        displs[i] = displs[i - 1] + counts[i - 1];
+    }
+    counts[nranks - 1] = natoms - displs[nranks - 1];
 }

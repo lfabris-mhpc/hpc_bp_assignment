@@ -53,9 +53,9 @@ TEST(UtilitiesPBC, sequentialPBC) {
     }
 }
 
-TEST(UtilitiesInitDisplsCounts, Consistency) {
-    constexpr int nsizes = 2;
-    int natomsv[nsizes] = { 11, 40 };
+TEST(UtilitiesInitDisplsCounts, consistency) {
+    constexpr int nsizes = 3;
+    int natomsv[nsizes] = { 3, 11, 40 };
 
     for (int i = 0; i < nsizes; ++i) {
         for (int nranks = 1; nranks < 5; ++nranks) {
@@ -66,10 +66,14 @@ TEST(UtilitiesInitDisplsCounts, Consistency) {
 
             ASSERT_EQ(displs[0], 0);
             ASSERT_GE(counts[0], 0);
+            ASSERT_LE(counts[0], natomsv[i]);
 
             int sum = counts[0];
             for (int j = 1; j < nranks; ++j) {
                 ASSERT_EQ(displs[j - 1] + counts[j - 1], displs[j]);
+                ASSERT_GE(counts[j], 0);
+                ASSERT_LE(counts[j], natomsv[i]);
+
                 sum += counts[j];
             }
 
@@ -79,22 +83,26 @@ TEST(UtilitiesInitDisplsCounts, Consistency) {
 }
 
 TEST(UtilitiesInitDisplsCountsEven, consistency) {
-    constexpr int nsizes = 2;
-    int natomsv[nsizes] = { 11, 40 };
+    constexpr int nsizes = 3;
+    int natomsv[nsizes] = { 3, 11, 40 };
 
     for (int i = 0; i < nsizes; ++i) {
         for (int nranks = 1; nranks < 5; ++nranks) {
             int displs[nranks];
             int counts[nranks];
 
-            init_displs_counts(natomsv[i], nranks, displs, counts);
+            init_displs_counts_even(natomsv[i], nranks, displs, counts);
 
             ASSERT_EQ(displs[0], 0);
             ASSERT_GE(counts[0], 0);
+            ASSERT_LE(counts[0], natomsv[i]);
 
             int sum = counts[0];
             for (int j = 1; j < nranks; ++j) {
                 ASSERT_EQ(displs[j - 1] + counts[j - 1], displs[j]);
+                ASSERT_GE(counts[j], 0);
+                ASSERT_LE(counts[j], natomsv[i]);
+
                 sum += counts[j];
             }
 

@@ -166,6 +166,132 @@ TEST_F(MPITest, force_mpi_basic) {
     }
 }
 
+TEST_F(MPITest, force_mpi_ibasic) {
+    const double Fx_byhand{ 93.540791569 };
+    const double Fy_byhand{ 43.346057261 };
+    const double Fz_byhand{ 43.346057261 };
+
+    MPI_Barrier(sys->comm);
+    force_mpi_ibasic(sys);
+
+    if (!sys->rank) {
+        std::cout << "testing force_mpi_basic" << std::endl;
+
+        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
+
+        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
+    }
+}
+
+TEST_F(MPITest, force_mpi_ibasic_even) {
+    const double Fx_byhand{ 93.540791569 };
+    const double Fy_byhand{ 43.346057261 };
+    const double Fz_byhand{ 43.346057261 };
+
+    MPI_Barrier(sys->comm);
+    force_mpi_ibasic_even(sys);
+
+    if (!sys->rank) {
+        std::cout << "testing force_mpi_basic" << std::endl;
+
+        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
+
+        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
+    }
+}
+
+TEST_F(MPITest, force_mpi_primitive) {
+    const double Fx_byhand{ 93.540791569 };
+    const double Fy_byhand{ 43.346057261 };
+    const double Fz_byhand{ 43.346057261 };
+
+    MPI_Barrier(sys->comm);
+    force_mpi_primitive(sys);
+
+    if (!sys->rank) {
+        std::cout << "testing force_mpi_basic" << std::endl;
+
+        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
+
+        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
+    }
+}
+
+TEST_F(MPITest, force_mpi_slice) {
+    const double Fx_byhand{ 93.540791569 };
+    const double Fy_byhand{ 43.346057261 };
+    const double Fz_byhand{ 43.346057261 };
+
+    MPI_Barrier(sys->comm);
+    force_mpi_slice(sys);
+
+    if (!sys->rank) {
+        std::cout << "testing force_mpi_basic" << std::endl;
+
+        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
+
+        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
+    }
+}
+
+TEST_F(MPITest, force_mpi_ring) {
+    const double Fx_byhand{ 93.540791569 };
+    const double Fy_byhand{ 43.346057261 };
+    const double Fz_byhand{ 43.346057261 };
+
+    MPI_Barrier(sys->comm);
+    force_mpi_ring(sys);
+
+    if (!sys->rank) {
+        std::cout << "testing force_mpi_basic" << std::endl;
+
+        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
+
+        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
+    }
+}
+
+TEST_F(MPITest, force_mpi_symmring) {
+    const double Fx_byhand{ 93.540791569 };
+    const double Fy_byhand{ 43.346057261 };
+    const double Fz_byhand{ 43.346057261 };
+
+    MPI_Barrier(sys->comm);
+    force_mpi_symmring(sys);
+
+    if (!sys->rank) {
+        std::cout << "testing force_mpi_basic" << std::endl;
+
+        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
+
+        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
+        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
+        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
+    }
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
 
