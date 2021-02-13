@@ -14,6 +14,8 @@
 #include "defs.h"
 #include "utilities.h"
 
+#include <omp.h>
+
 int main(int argc, char** argv) {
     int nprint, check;
     char restfile[BLEN], trajfile[BLEN], ergfile[BLEN], line[BLEN];
@@ -21,7 +23,7 @@ int main(int argc, char** argv) {
     mdsys_t sys;
     double t_start;
 
-    printf("LJMD version %3.1f\n", LJMD_VERSION);
+    //    printf("LJMD version %3.1f\n", LJMD_VERSION);
 
     t_start = wallclock();
 
@@ -34,9 +36,11 @@ int main(int argc, char** argv) {
     check = read_restart(&sys, restfile);
     assert(check == 0);
 
-    /* initialize forces and energies.*/
+    // initialize forces and energies.
     sys.nfi = 0;
+
     force(&sys);
+
     ekin(&sys);
 
     erg = fopen(ergfile, "w");
@@ -59,8 +63,11 @@ int main(int argc, char** argv) {
 
         /* propagate system and recompute energies */
         verlet_1(&sys);
+
         force(&sys);
+
         verlet_2(&sys);
+
         ekin(&sys);
     }
     /**************************************************/

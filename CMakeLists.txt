@@ -3,22 +3,26 @@ cmake_minimum_required(VERSION 3.10)
 set(LJMD_VERSION 1.0 CACHE STRING "Floating point number for the current version")
 project(ljmd VERSION ${LJMD_VERSION} LANGUAGES C)
 
-add_library(ljmd_rt SHARED
-    src/engine.c
-    src/input_output.c
-    src/utilities.c
-    src/defs.c
-)
+#src files
+list(APPEND src_files src/engine.c src/defs.c src/input_output.c src/utilities.c)
+#basic compiler flags
+list(APPEND ccflags "-Wall" "-Wextra" "-DLJMD_VERSION=${LJMD_VERSION}")
+#compiler-optimization flags
+list(APPEND ccflags_copt "-g" "-O3" "-march=native" "-DNDEBUG" "-ffast-math" "-fomit-frame-pointer" "-fexpensive-optimizations")
+
+#list(APPEND ccflags_omp "-fopenmp")
+find_package(OpenMP REQUIRED)
+
+add_library(ljmd_rt SHARED ${src_files})
+
 target_include_directories(ljmd_rt PRIVATE include)
-target_link_libraries(ljmd_rt PRIVATE m)
+target_compile_options(ljmd_rt PRIVATE ${ccflags} ${ccflags_copt})
+target_link_libraries(ljmd_rt PRIVATE m OpenMP::OpenMP_C)
 
 add_executable(ljmd.x main.c)
 target_include_directories(ljmd.x PRIVATE include)
-target_compile_options(ljmd.x PUBLIC -Wall -g -O3 -march=native -ffast-math -fomit-frame-pointer -fexpensive-optimizations)
-target_compile_definitions(ljmd.x PRIVATE -DLJMD_VERSION=${LJMD_VERSION})
-
-target_link_libraries(ljmd.x PRIVATE m)
-target_link_libraries(ljmd.x PRIVATE ljmd_rt)
+target_compile_options(ljmd.x PRIVATE ${ccflags} ${ccflags_copt})
+target_link_libraries(ljmd.x PRIVATE m ljmd_rt OpenMP::OpenMP_C) 
 
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
