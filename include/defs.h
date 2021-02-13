@@ -40,4 +40,6 @@ int mdsys_init(mdsys_t* sys);
 /* deallocate memory */
 void mdsys_free(mdsys_t* sys);
 
+int mdsys_synch(mdsys_t* sys);
+
 #endif
