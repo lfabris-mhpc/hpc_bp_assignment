@@ -1,20 +1,23 @@
-This package contains simplified MD code with multi-threading
+This package contains simplified MD code with multi-threading and multi-process 
 parallelization for simulating atoms with a Lennard-Jones potential.
 
-The bundled makefiles are set up to compile the executable once
-with OpenMP disabled and once with OpenMP enabled with each build
-placing the various object files in separate directories.
+The project is built with CMake and provides test through the GoogleTest library.
 
-The examples directory contains 3 sets of example input decks
+The examples directory contains 2 sets of example input decks
 and the reference directory the corresponding outputs.
 
-Type: make
-to compile everything and: make clean
+Type: mkdir build
+$ cd build
+$ cmake ..
+optionally, select the build type with
+$ cmake .. -DCMAKE_BUILD_TYPE=<type>
+with <type> one of Debug, Release, MinSizeRel, RelWithDebInfo
+to compile
+$ cmake --build .
 to remove all compiled objects
+$ cmake --build . --target clean
 
-The serial executable can also be built with CMake-generated
-build files.
-Create a build directory: mkdir build
-Go inside the build directory: cd build
-Generate the build files: cmake ..
-Build the executable in the current directory: cmake --build .
+The contributors are:
+- Mattia Mencagli as mattiamencagli
+- Orlenys Troconis as otroconi
+- Lorenzo Fabris as lfabris-mhpc
