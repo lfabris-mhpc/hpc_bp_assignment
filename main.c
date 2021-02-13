@@ -23,8 +23,7 @@ int main(int argc, char** argv) {
     mdsys_t sys;
     double t_start;
 
-//    printf("LJMD version %3.1f\n", LJMD_VERSION);
-
+    //    printf("LJMD version %3.1f\n", LJMD_VERSION);
 
     t_start = wallclock();
 
@@ -66,7 +65,7 @@ int main(int argc, char** argv) {
         verlet_1(&sys);
 
         force(&sys);
-       
+
         verlet_2(&sys);
 
         ekin(&sys);
