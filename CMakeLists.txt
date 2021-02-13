@@ -19,6 +19,11 @@ find_package(MPI REQUIRED)
 list(APPEND src_files src/engine.c src/defs.c src/input_output.c src/utilities.c)
 list(APPEND ccflags "-Wall" "-Wextra" "-DLJMD_VERSION=${LJMD_VERSION}")
 
+#force selection
+if(FORCE)
+	list(APPEND ccflags "-DFORCE=${FORCE}")
+endif()
+
 add_library(ljmd_rt SHARED ${src_files})
 target_include_directories(ljmd_rt PRIVATE include)
 target_link_libraries(ljmd_rt PRIVATE m MPI::MPI_C)
