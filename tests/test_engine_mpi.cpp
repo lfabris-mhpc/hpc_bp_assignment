@@ -22,30 +22,9 @@ class MPITest : public ::testing::Test {
         MPI_Comm_size(sys->comm, &sys->nranks);
         MPI_Comm_rank(sys->comm, &sys->rank);
 
-        std::cout << "nranks: " << sys->nranks << std::endl;
-        std::cout << "rank: " << sys->rank << std::endl;
-
-        sys->displs = new int[sys->nranks];
-        sys->counts = new int[sys->nranks];
-
         // only 2 atoms
-        /*
-           sys->displs[0] = 0;
-        sys->counts[0] = (sys->nranks > 1) ? 1 : len;
-
-        if (sys->nranks > 1) {
-            sys->displs[1] = 1;
-            sys->counts[1] = 1;
-        }
-        for (int i = 2; i < sys->nranks; ++i) {
-            sys->displs[i] = sys->displs[i - 1] + sys->counts[i - 1];
-            sys->counts[i] = 0;
-        }
-        */
-
         sys->natoms = len;
         sys->mass = 1.0;
-        // TODO: put real values
         sys->nfi = 1;
         sys->dt = 5.0;
         sys->epsilon = 0.2379;
@@ -55,8 +34,6 @@ class MPITest : public ::testing::Test {
         sys->ekin = 0;
         sys->epot = 0;
         sys->temp = 0;
-
-        init_displs_counts(sys->natoms, sys->nranks, sys->displs, sys->counts);
 
         sys->rx = new double[len];
         sys->ry = new double[len];
@@ -73,14 +50,6 @@ class MPITest : public ::testing::Test {
         sys->pfx = new double[len];
         sys->pfy = new double[len];
         sys->pfz = new double[len];
-
-        sys->srx = new double[len];
-        sys->sry = new double[len];
-        sys->srz = new double[len];
-
-        sys->rrx = new double[len];
-        sys->rry = new double[len];
-        sys->rrz = new double[len];
 
         sys->rx[0] = 1.0;
         sys->ry[0] = 1.0;
@@ -105,20 +74,6 @@ class MPITest : public ::testing::Test {
         sys->fx[1] = 0.0;
         sys->fy[1] = 0.0;
         sys->fz[1] = 0.0;
-
-        for (int i = 0; i < len; ++i) {
-            sys->pfx[i] = 0.0;
-            sys->pfy[i] = 0.0;
-            sys->pfz[i] = 0.0;
-
-            sys->srx[i] = 0.0;
-            sys->sry[i] = 0.0;
-            sys->srz[i] = 0.0;
-
-            sys->rrx[i] = 0.0;
-            sys->rry[i] = 0.0;
-            sys->rrz[i] = 0.0;
-        }
     }
 
     void TearDown() {
@@ -134,9 +89,6 @@ class MPITest : public ::testing::Test {
         delete[] sys->fy;
         delete[] sys->fz;
 
-        delete[] sys->displs;
-        delete[] sys->counts;
-
         delete[] sys->pfx;
         delete[] sys->pfy;
         delete[] sys->pfz;
@@ -145,127 +97,13 @@ class MPITest : public ::testing::Test {
     }
 };
 
-TEST_F(MPITest, force_mpi_basic) {
+TEST_F(MPITest, force) {
     const double Fx_byhand{ 93.540791569 };
     const double Fy_byhand{ 43.346057261 };
     const double Fz_byhand{ 43.346057261 };
 
     MPI_Barrier(sys->comm);
-    force_mpi_basic(sys);
-
-    if (!sys->rank) {
-        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
-
-        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
-    }
-}
-
-TEST_F(MPITest, force_mpi_ibasic) {
-    const double Fx_byhand{ 93.540791569 };
-    const double Fy_byhand{ 43.346057261 };
-    const double Fz_byhand{ 43.346057261 };
-
-    MPI_Barrier(sys->comm);
-    force_mpi_ibasic(sys);
-
-    if (!sys->rank) {
-        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
-
-        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
-    }
-}
-
-TEST_F(MPITest, force_mpi_ibasic_even) {
-    const double Fx_byhand{ 93.540791569 };
-    const double Fy_byhand{ 43.346057261 };
-    const double Fz_byhand{ 43.346057261 };
-
-    MPI_Barrier(sys->comm);
-    force_mpi_ibasic_even(sys);
-
-    if (!sys->rank) {
-        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
-
-        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
-    }
-}
-
-TEST_F(MPITest, force_mpi_primitive) {
-    const double Fx_byhand{ 93.540791569 };
-    const double Fy_byhand{ 43.346057261 };
-    const double Fz_byhand{ 43.346057261 };
-
-    MPI_Barrier(sys->comm);
-    force_mpi_primitive(sys);
-
-    if (!sys->rank) {
-        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
-
-        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
-    }
-}
-
-TEST_F(MPITest, force_mpi_slice) {
-    const double Fx_byhand{ 93.540791569 };
-    const double Fy_byhand{ 43.346057261 };
-    const double Fz_byhand{ 43.346057261 };
-
-    MPI_Barrier(sys->comm);
-    force_mpi_slice(sys);
-
-    if (!sys->rank) {
-        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
-
-        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
-    }
-}
-
-TEST_F(MPITest, force_mpi_ring) {
-    const double Fx_byhand{ 93.540791569 };
-    const double Fy_byhand{ 43.346057261 };
-    const double Fz_byhand{ 43.346057261 };
-
-    MPI_Barrier(sys->comm);
-    force_mpi_ring(sys);
-
-    if (!sys->rank) {
-        ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
-
-        ASSERT_NEAR(sys->fx[1], -Fx_byhand, 0.005);
-        ASSERT_NEAR(sys->fy[1], -Fy_byhand, 0.005);
-        ASSERT_NEAR(sys->fz[1], -Fz_byhand, 0.005);
-    }
-}
-
-TEST_F(MPITest, force_mpi_symmring) {
-    const double Fx_byhand{ 93.540791569 };
-    const double Fy_byhand{ 43.346057261 };
-    const double Fz_byhand{ 43.346057261 };
-
-    MPI_Barrier(sys->comm);
-    force_mpi_symmring(sys);
+    force(sys);
 
     if (!sys->rank) {
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);

@@ -17,10 +17,6 @@
 #include "defs.h"
 #include "utilities.h"
 
-#if !defined(FORCE)
-#define FORCE force_mpi_basic
-#endif
-
 int main(int argc, char** argv) {
     int mpi_thread_provided;
     // int check = MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &mpi_thread_provided);
@@ -62,23 +58,8 @@ int main(int argc, char** argv) {
 
     // initialize forces and energies.
     sys.nfi = 0;
-    FORCE(&sys);
+    force(&sys);
     ekin(&sys);
-
-#ifdef VERBOSE
-    if (!sys.rank) {
-        printf("displs: [");
-        for (int i = 0; i < sys.nranks; ++i) {
-            printf("%d, ", sys.displs[i]);
-        }
-        printf("]\n");
-        printf("counts: [");
-        for (int i = 0; i < sys.nranks; ++i) {
-            printf("%d, ", sys.counts[i]);
-        }
-        printf("]\n");
-    }
-#endif
 
     FILE* erg = NULL;
     FILE* traj = NULL;
@@ -107,7 +88,7 @@ int main(int argc, char** argv) {
             verlet_1(&sys);
         }
 
-        FORCE(&sys);
+        force(&sys);
 
         if (!sys.rank) {
             verlet_2(&sys);

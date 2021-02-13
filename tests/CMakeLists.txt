@@ -17,6 +17,12 @@ add_test(NAME Regression-test-multip-omp-argon_108 COMMAND regression.sh "${mpi_
 add_test(NAME Regression-test-multip-mpi-argon_108 COMMAND regression.sh "${mpi_cmd_multip_mpi}" argon_108)
 add_test(NAME Regression-test-multip-hybrid-argon_108 COMMAND regression.sh "${mpi_cmd_multip_hybrid}" argon_108)
 
+add_test(NAME Regression-test-serial-argon_2916 COMMAND regression.sh "${mpi_cmd_serial}" argon_2916)
+add_test(NAME Regression-test-multip-omp-argon_2916 COMMAND regression.sh "${mpi_cmd_multip_omp}" argon_2916)
+add_test(NAME Regression-test-multip-mpi-argon_2916 COMMAND regression.sh "${mpi_cmd_multip_mpi}" argon_2916)
+add_test(NAME Regression-test-multip-hybrid-argon_2916 COMMAND regression.sh "${mpi_cmd_multip_hybrid}" argon_2916)
+
+
 #unit tests
 #utilities
 add_executable(test_utilities.x test_utilities.cpp)

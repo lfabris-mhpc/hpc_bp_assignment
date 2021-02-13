@@ -24,13 +24,12 @@ struct _mdsys {
     double *rx, *ry, *rz;
     double *vx, *vy, *vz;
     double *fx, *fy, *fz;
+	
     // MPI
     MPI_Comm comm;
     int nranks, rank;
     int *displs, *counts;
     double *pfx, *pfy, *pfz;
-    double *srx, *sry, *srz;
-    double *rrx, *rry, *rrz;
 };
 typedef struct _mdsys mdsys_t;
 

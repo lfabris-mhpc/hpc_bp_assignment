@@ -31,7 +31,7 @@ int mdsys_init(mdsys_t* sys) {
     sys->counts = (int*)malloc(sys->nranks * sizeof(int));
     ret += sys->counts == NULL;
 
-    init_displs_counts(sys->natoms, sys->nranks, sys->displs, sys->counts);
+    //init_displs_counts(sys->natoms, sys->nranks, sys->displs, sys->counts);
 
     sys->pfx = (double*)malloc(sys->natoms * sizeof(double));
     ret += sys->pfx == NULL;
@@ -39,21 +39,7 @@ int mdsys_init(mdsys_t* sys) {
     ret += sys->pfy == NULL;
     sys->pfz = (double*)malloc(sys->natoms * sizeof(double));
     ret += sys->pfz == NULL;
-
-    sys->srx = (double*)malloc(sys->natoms * sizeof(double));
-    ret += sys->srx == NULL;
-    sys->sry = (double*)malloc(sys->natoms * sizeof(double));
-    ret += sys->sry == NULL;
-    sys->srz = (double*)malloc(sys->natoms * sizeof(double));
-    ret += sys->srz == NULL;
-
-    sys->rrx = (double*)malloc(sys->natoms * sizeof(double));
-    ret += sys->rrx == NULL;
-    sys->rry = (double*)malloc(sys->natoms * sizeof(double));
-    ret += sys->rry == NULL;
-    sys->rrz = (double*)malloc(sys->natoms * sizeof(double));
-    ret += sys->rrz == NULL;
-
+	
     return ret;
 }
 
@@ -91,21 +77,6 @@ void mdsys_free(mdsys_t* sys) {
     sys->pfy = NULL;
     free(sys->pfz);
     sys->pfz = NULL;
-
-    // ring
-    free(sys->srx);
-    sys->srx = NULL;
-    free(sys->sry);
-    sys->sry = NULL;
-    free(sys->srz);
-    sys->srz = NULL;
-
-    free(sys->rrx);
-    sys->rrx = NULL;
-    free(sys->rry);
-    sys->ry = NULL;
-    free(sys->rrz);
-    sys->rrz = NULL;
 }
 
 int mdsys_synch(mdsys_t* sys) {

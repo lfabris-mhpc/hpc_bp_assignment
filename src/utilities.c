@@ -26,6 +26,7 @@ double pbc(double x, const double boxby2) {
     return x;
 }
 
+/*
 void init_displs_counts(const int natoms, const int nranks, int* displs, int* counts) {
     assert(displs);
     assert(counts);
@@ -63,3 +64,4 @@ void init_displs_counts_even(const int natoms, const int nranks, int* displs, in
     }
     counts[nranks - 1] = natoms - displs[nranks - 1];
 }
+*/
