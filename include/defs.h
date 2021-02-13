@@ -10,6 +10,8 @@ struct ompi_communicator_t;
 typedef struct ompi_communicator_t* MPI_Comm;
 #endif
 
+#define UNUSED(x) (void)(x)
+
 /* generic file- or pathname buffer length */
 #define BLEN 200
 

@@ -28,6 +28,7 @@
 int main(int argc, char** argv) {
     int check = MPI_Init(&argc, &argv);
     assert(check == MPI_SUCCESS);
+	UNUSED(check);
 
     mdsys_t sys;
     sys.comm = MPI_COMM_WORLD;
