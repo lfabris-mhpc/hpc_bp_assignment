@@ -3,6 +3,15 @@
 
 #include <stdlib.h>
 
+#if !defined(__cplusplus)
+#include <mpi.h>
+#else
+struct ompi_communicator_t;
+typedef struct ompi_communicator_t* MPI_Comm;
+#endif
+
+#define UNUSED(x) (void)(x)
+
 /* generic file- or pathname buffer length */
 #define BLEN 200
 
@@ -15,11 +24,21 @@ struct _mdsys {
     double *rx, *ry, *rz;
     double *vx, *vy, *vz;
     double *fx, *fy, *fz;
+
+    // MPI
+    MPI_Comm comm;
+    int nranks, rank;
+    int *displs, *counts;
+    double *pfx, *pfy, *pfz;
 };
 typedef struct _mdsys mdsys_t;
 
+/* allocate memory */
 int mdsys_init(mdsys_t* sys);
 
-int mdsys_free(mdsys_t* sys);
+/* deallocate memory */
+void mdsys_free(mdsys_t* sys);
+
+int mdsys_synch(mdsys_t* sys);
 
 #endif

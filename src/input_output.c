@@ -79,6 +79,25 @@ int read_restart(mdsys_t* sys, char* restfile) {
     return 0;
 }
 
+int write_restart(mdsys_t* sys, char* restfile) {
+    /* write restart */
+    FILE* fp;
+    fp = fopen(restfile, "w");
+    if (fp) {
+        for (int i = 0; i < sys->natoms; ++i) {
+            fprintf(fp, "%lf  %lf  %lf\n", sys->rx[i], sys->ry[i], sys->rz[i]);
+        }
+        for (int i = 0; i < sys->natoms; ++i) {
+            fprintf(fp, "%lf  %lf  %lf\n", sys->vx[i], sys->vy[i], sys->vz[i]);
+        }
+        fclose(fp);
+    } else {
+        perror("cannot open restart file for writing");
+        return 3;
+    }
+    return 0;
+}
+
 /* helper function: read a line and then return
    the first string with whitespace stripped off */
 int get_a_line(FILE* fp, char* buf) {

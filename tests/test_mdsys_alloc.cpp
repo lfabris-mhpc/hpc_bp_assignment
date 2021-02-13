@@ -19,23 +19,7 @@ TEST(DefsMdsysInit, mdsys_init) {
     CHECK = mdsys_init(&sys);
     assert(CHECK == 0);
 
-    check = mdsys_free(&sys);
-}
-
-TEST(DefsMdsysFree, mdsys_free) {
-    char restfile[BLEN], trajfile[BLEN], ergfile[BLEN], line[BLEN];
-    int check, nprint;
-    int CHECK;
-    mdsys_t sys;
-
-    check = read_input_file(&sys, stdin, line, restfile, trajfile, ergfile, &nprint);
-
-    check = mdsys_init(&sys);
-
-    check = read_restart(&sys, restfile);
-
-    CHECK = mdsys_free(&sys);
-    assert(CHECK == 0);
+    mdsys_free(&sys);
 }
 
 TEST(Input_outputRead, read_input_file) {
@@ -47,7 +31,7 @@ TEST(Input_outputRead, read_input_file) {
     CHECK = read_input_file(&sys, stdin, line, restfile, trajfile, ergfile, &nprint);
     assert(CHECK == 0);
 
-    check = mdsys_free(&sys);
+    mdsys_free(&sys);
 }
 
 TEST(Input_outputRestart, read_restart) {
@@ -61,5 +45,5 @@ TEST(Input_outputRestart, read_restart) {
     CHECK = read_restart(&sys, restfile);
     assert(CHECK == 0);
 
-    check = mdsys_free(&sys);
+    mdsys_free(&sys);
 }
