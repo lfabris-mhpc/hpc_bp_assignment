@@ -32,9 +32,9 @@ void force(mdsys_t* sys) {
     azzero(sys->fy, sys->natoms);
     azzero(sys->fz, sys->natoms);
 
-    const double c12 = 4.0 * sys->epsilon * pow(sys->sigma, 12.0);
-    const double c6 = 4.0 * sys->epsilon * pow(sys->sigma, 6.0);
-    const double rcsq = sys->rcut * sys->rcut;
+    double c12 = 4.0 * sys->epsilon * pow(sys->sigma, 12.0);
+    double c6 = 4.0 * sys->epsilon * pow(sys->sigma, 6.0);
+    double rcsq = sys->rcut * sys->rcut;
 
     double epot = 0.0;
     double* fx = sys->fx;
@@ -45,10 +45,10 @@ void force(mdsys_t* sys) {
     for (int i = 0; i < sys->natoms - 1; ++i) {
         for (int j = i + 1; j < sys->natoms; ++j) {
             /* get distance between particle i and j */
-            const double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
-            const double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
-            const double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
-            const double rsq = rx * rx + ry * ry + rz * rz;
+            double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
+            double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
+            double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
+            double rsq = rx * rx + ry * ry + rz * rz;
 
             /* compute force and energy if within cutoff */
             if (rsq < rcsq) {
