@@ -6,12 +6,12 @@ The project is built with CMake and provides test through the GoogleTest library
 The examples directory contains 2 sets of example input decks
 and the reference directory the corresponding outputs.  
   
-Type: 
+Type:  
 $ mkdir build  
 $ cd build  
 $ cmake ..  
 optionally, select the build type with:  
-$ cmake .. -DCMAKE_BUILD_TYPE=\<type\>  
+$ cmake -DCMAKE_BUILD_TYPE=\<type\> ..  
 with <type> one of Debug, Release, MinSizeRel, RelWithDebInfo  
 to compile:  
 $ cmake --build .  
