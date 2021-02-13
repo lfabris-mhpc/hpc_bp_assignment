@@ -22,8 +22,6 @@ int main(int argc, char** argv) {
     FILE *traj, *erg;
     mdsys_t sys;
     double t_start;
-    int nthreads, tid;
-
 
 //    printf("LJMD version %3.1f\n", LJMD_VERSION);
 
@@ -42,7 +40,7 @@ int main(int argc, char** argv) {
     // initialize forces and energies.
     sys.nfi = 0;
 
-    force_openmp(&sys);
+    force(&sys);
 
     ekin(&sys);
 
@@ -67,7 +65,7 @@ int main(int argc, char** argv) {
         /* propagate system and recompute energies */
         verlet_1(&sys);
 
-        force_openmp(&sys);
+        force(&sys);
        
         verlet_2(&sys);
 

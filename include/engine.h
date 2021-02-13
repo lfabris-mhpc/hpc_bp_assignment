@@ -15,6 +15,4 @@ void verlet_2(mdsys_t* sys);
 
 void force_openmp(mdsys_t* sys); 
 
-void force_openmp_nonew(mdsys_t* sys); 
-
 #endif

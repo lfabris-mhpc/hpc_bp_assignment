@@ -30,8 +30,7 @@ void force(mdsys_t* sys) {
     double rsq, rcsq, ffac;
     double rx, ry, rz;
     double c6, c12;
-    int i, j;
-
+  
     /* zero energy and forces */
     azzero(sys->fx, sys->natoms);
     azzero(sys->fy, sys->natoms);
@@ -45,22 +44,15 @@ void force(mdsys_t* sys) {
     double *fx = sys->fx;
     double *fy = sys->fy;
     double *fz = sys->fz;
-
-	#pragma omp parallel shared(sys) reduction(+:epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
-    	{
-		const int nthreads = omp_get_num_threads();
-		const int tid = omp_get_thread_num();	
     
-    for (int i = 0; i < (sys->natoms)-1; i += nthreads) {
-		    int ii = i + tid;
-		    if ( ii >= (sys->natoms) - 1)
-			    break;
-
-        	for (int j = ii + 1; j < (sys->natoms); ++j) {
+#pragma omp parallel for schedule(dynamic) shared(sys) reduction(+: epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
+    for (int i = 0; i < sys->natoms - 1; ++i) {
+        for (int j = i + 1; j < sys->natoms; ++j) {
+		
             /* get distance between particle i and j */
-            rx = pbc(sys->rx[ii] - sys->rx[j], 0.5 * sys->box);
-            ry = pbc(sys->ry[ii] - sys->ry[j], 0.5 * sys->box);
-            rz = pbc(sys->rz[ii] - sys->rz[j], 0.5 * sys->box);
+            rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
+            ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
+            rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
             rsq = rx * rx + ry * ry + rz * rz;
 
             /* compute force and energy if within cutoff */
@@ -73,9 +65,9 @@ void force(mdsys_t* sys) {
 
                 epot += r6 * (c12 * r6 - c6);
 
-                fx[ii] += rx * ffac;
-                fy[ii] += ry * ffac;
-                fz[ii] += rz * ffac;
+                fx[i] += rx * ffac;
+                fy[i] += ry * ffac;
+                fz[i] += rz * ffac;
 
                 fx[j] -= rx * ffac;
                 fy[j] -= ry * ffac;
@@ -83,7 +75,7 @@ void force(mdsys_t* sys) {
                 }
              }
     }
-}
+
     sys->epot = epot;
 }
 
@@ -177,54 +169,4 @@ void force_openmp(mdsys_t* sys) {
 	   
 	sys->epot = epot;
 }
-
-//compute force using threads NO 3rd Newton law
-void force_openmp_nonew(mdsys_t* sys) {
-
-    azzero(sys->fx, sys->natoms);
-    azzero(sys->fy, sys->natoms);
-    azzero(sys->fz, sys->natoms);
-
-    double epot = 0.0;
-    double *fx = sys->fx;
-    double *fy = sys->fy;
-    double *fz = sys->fz;
-
-	#pragma omp parallel shared(sys) reduction(+:epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
-    	{
-	    //NO third Newton law/
-
-	    for (int i = 0; i < (sys->natoms); ++i) {		    
-        	for (int j = 0; j < sys->natoms; ++j) {
-            // particles have no interactions with themselves 
-			if (i == j){
-		                continue;
-			}
-
-	            // get distance between particle i and j 
-        	    const double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
-	            const double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
-        	    const double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
-	            const double r = sqrt(rx * rx + ry * ry + rz * rz);
-
-        	    // compute force and energy if within cutoff 
-	            if (r < sys->rcut) {
-        	        const double ffac = -4.0 * sys->epsilon *
-                	    (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
-
-	                epot += 0.5 * 4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
-
-	                fx[i] += rx / r * ffac;
-        	        fy[i] += ry / r * ffac;
-	                fz[i] += rz / r * ffac;
-
-		    }
-		}
-	    }
-	 
-	}
-	   
-	sys->epot = epot;
-}
-
 

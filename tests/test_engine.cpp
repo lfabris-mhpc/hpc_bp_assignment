@@ -86,7 +86,7 @@ TEST(EngineVerlet_2, verlet_2) {
     assert(check == 0);
 }
 
-TEST(EngineForce, force_openmp) {
+TEST(EngineForce, force) {
     int nprint, i, check;
     char restfile[BLEN], trajfile[BLEN], ergfile[BLEN], line[BLEN];
     mdsys_t sys;
@@ -104,7 +104,7 @@ TEST(EngineForce, force_openmp) {
     const double Fy_byhand{ 43.346057261 };
     const double Fz_byhand{ 43.346057261 };
 
-    force_openmp(&sys);
+    force(&sys);
     ASSERT_DOUBLE_EQ(sys.fx[0], Fx_byhand);
     ASSERT_DOUBLE_EQ(sys.fy[0], Fy_byhand);
     ASSERT_DOUBLE_EQ(sys.fz[0], Fz_byhand);
