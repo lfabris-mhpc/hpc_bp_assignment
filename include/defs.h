@@ -24,7 +24,7 @@ struct _mdsys {
     double *rx, *ry, *rz;
     double *vx, *vy, *vz;
     double *fx, *fy, *fz;
-	
+
     // MPI
     MPI_Comm comm;
     int nranks, rank;

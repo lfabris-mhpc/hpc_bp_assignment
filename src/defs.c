@@ -31,7 +31,7 @@ int mdsys_init(mdsys_t* sys) {
     sys->counts = (int*)malloc(sys->nranks * sizeof(int));
     ret += sys->counts == NULL;
 
-    //init_displs_counts(sys->natoms, sys->nranks, sys->displs, sys->counts);
+    // init_displs_counts(sys->natoms, sys->nranks, sys->displs, sys->counts);
 
     sys->pfx = (double*)malloc(sys->natoms * sizeof(double));
     ret += sys->pfx == NULL;
@@ -39,7 +39,7 @@ int mdsys_init(mdsys_t* sys) {
     ret += sys->pfy == NULL;
     sys->pfz = (double*)malloc(sys->natoms * sizeof(double));
     ret += sys->pfz == NULL;
-	
+
     return ret;
 }
 

@@ -49,38 +49,38 @@ void force(mdsys_t* sys) {
     double* pfx = sys->pfx;
     double* pfy = sys->pfy;
     double* pfz = sys->pfz;
-	
-	double c12 = 4.0 * sys->epsilon * pow(sys->sigma, 12.0);
-	double c6 = 4.0 * sys->epsilon * pow(sys->sigma, 6.0);
-	double rcsq = sys->rcut * sys->rcut;
+
+    double c12 = 4.0 * sys->epsilon * pow(sys->sigma, 12.0);
+    double c6 = 4.0 * sys->epsilon * pow(sys->sigma, 6.0);
+    double rcsq = sys->rcut * sys->rcut;
 
 #pragma omp parallel for schedule(dynamic) shared(sys, c12, c6, rcsq, rx, ry, rz) reduction(+: epot, pfx[:sys->natoms], pfy[:sys->natoms], pfz[:sys->natoms])
     for (int i = 0; i < (sys->natoms - 1); i += sys->nranks) {
         int ii = i + sys->rank;
         if (ii < (sys->natoms - 1)) {
             for (int j = ii + 1; j < sys->natoms; ++j) {
-				/* get distance between particle i and j */
-				double prx = pbc(rx[ii] - rx[j], 0.5 * sys->box);
-				double pry = pbc(ry[ii] - ry[j], 0.5 * sys->box);
-				double prz = pbc(rz[ii] - rz[j], 0.5 * sys->box);
-				double rsq = prx * prx + pry * pry + prz * prz;
+                /* get distance between particle i and j */
+                double prx = pbc(rx[ii] - rx[j], 0.5 * sys->box);
+                double pry = pbc(ry[ii] - ry[j], 0.5 * sys->box);
+                double prz = pbc(rz[ii] - rz[j], 0.5 * sys->box);
+                double rsq = prx * prx + pry * pry + prz * prz;
 
-				/* compute force and energy if within cutoff */
-				if (rsq < rcsq) {
-					double rinv = 1.0 / rsq;
-					double r6 = rinv * rinv * rinv;
+                /* compute force and energy if within cutoff */
+                if (rsq < rcsq) {
+                    double rinv = 1.0 / rsq;
+                    double r6 = rinv * rinv * rinv;
 
-					double ffac = (12.0 * c12 * r6 - 6.0 * c6) * r6 * rinv;
-					epot += r6 * (c12 * r6 - c6);
+                    double ffac = (12.0 * c12 * r6 - 6.0 * c6) * r6 * rinv;
+                    epot += r6 * (c12 * r6 - c6);
 
-					pfx[ii] += prx * ffac;
-					pfy[ii] += pry * ffac;
-					pfz[ii] += prz * ffac;
+                    pfx[ii] += prx * ffac;
+                    pfy[ii] += pry * ffac;
+                    pfz[ii] += prz * ffac;
 
-					pfx[j] -= prx * ffac;
-					pfy[j] -= pry * ffac;
-					pfz[j] -= prz * ffac;
-				}
+                    pfx[j] -= prx * ffac;
+                    pfy[j] -= pry * ffac;
+                    pfz[j] -= prz * ffac;
+                }
             }
         }
     }
