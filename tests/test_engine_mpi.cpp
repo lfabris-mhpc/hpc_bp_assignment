@@ -154,8 +154,6 @@ TEST_F(MPITest, force_mpi_basic) {
     force_mpi_basic(sys);
 
     if (!sys->rank) {
-        std::cout << "testing force_mpi_basic" << std::endl;
-
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
         ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
         ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
@@ -175,8 +173,6 @@ TEST_F(MPITest, force_mpi_ibasic) {
     force_mpi_ibasic(sys);
 
     if (!sys->rank) {
-        std::cout << "testing force_mpi_basic" << std::endl;
-
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
         ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
         ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
@@ -196,8 +192,6 @@ TEST_F(MPITest, force_mpi_ibasic_even) {
     force_mpi_ibasic_even(sys);
 
     if (!sys->rank) {
-        std::cout << "testing force_mpi_basic" << std::endl;
-
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
         ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
         ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
@@ -217,8 +211,6 @@ TEST_F(MPITest, force_mpi_primitive) {
     force_mpi_primitive(sys);
 
     if (!sys->rank) {
-        std::cout << "testing force_mpi_basic" << std::endl;
-
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
         ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
         ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
@@ -238,8 +230,6 @@ TEST_F(MPITest, force_mpi_slice) {
     force_mpi_slice(sys);
 
     if (!sys->rank) {
-        std::cout << "testing force_mpi_basic" << std::endl;
-
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
         ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
         ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
@@ -259,8 +249,6 @@ TEST_F(MPITest, force_mpi_ring) {
     force_mpi_ring(sys);
 
     if (!sys->rank) {
-        std::cout << "testing force_mpi_basic" << std::endl;
-
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
         ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
         ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);
@@ -280,8 +268,6 @@ TEST_F(MPITest, force_mpi_symmring) {
     force_mpi_symmring(sys);
 
     if (!sys->rank) {
-        std::cout << "testing force_mpi_basic" << std::endl;
-
         ASSERT_NEAR(sys->fx[0], Fx_byhand, 0.005);
         ASSERT_NEAR(sys->fy[0], Fy_byhand, 0.005);
         ASSERT_NEAR(sys->fz[0], Fz_byhand, 0.005);

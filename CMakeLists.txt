@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(LJMD_VERSION 1.1 CACHE STRING "Floating point number for the current version")
+set(LJMD_VERSION 1.0 CACHE STRING "Floating point number for the current version")
 
 project(ljmd VERSION ${LJMD_VERSION} LANGUAGES C)
 
@@ -13,11 +13,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 #message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
+find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 
-#src files
 list(APPEND src_files src/engine.c src/defs.c src/input_output.c src/utilities.c)
+
 list(APPEND ccflags "-Wall" "-Wextra" "-DLJMD_VERSION=${LJMD_VERSION}")
+list(APPEND ccflags_copt "-g" "-O3" "-march=native" "-DNDEBUG" "-ffast-math" "-fomit-frame-pointer" "-fexpensive-optimizations")
 
 #force selection
 if(FORCE)
@@ -25,13 +27,16 @@ if(FORCE)
 endif()
 
 add_library(ljmd_rt SHARED ${src_files})
+
 target_include_directories(ljmd_rt PRIVATE include)
-target_link_libraries(ljmd_rt PRIVATE m MPI::MPI_C)
+target_compile_options(ljmd_rt PRIVATE ${ccflags} ${ccflags_copt})
+target_link_libraries(ljmd_rt PRIVATE MPI::MPI_C OpenMP::OpenMP_C m)
 
 add_executable(ljmd.x main.c)
 target_include_directories(ljmd.x PRIVATE include)
-target_compile_options(ljmd.x PRIVATE ${ccflags})
-target_link_libraries(ljmd.x PRIVATE m ljmd_rt MPI::MPI_C)
+
+target_compile_options(ljmd.x PRIVATE ${ccflags} ${ccflags_copt})
+target_link_libraries(ljmd.x PRIVATE m ljmd_rt MPI::MPI_C OpenMP::OpenMP_C)
 
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <omp.h>
 #include <mpi.h>
 
 #include "engine.h"
@@ -21,6 +22,8 @@
 #endif
 
 int main(int argc, char** argv) {
+    int mpi_thread_provided;
+    // int check = MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &mpi_thread_provided);
     int check = MPI_Init(&argc, &argv);
     assert(check == MPI_SUCCESS);
     UNUSED(check);
@@ -47,7 +50,7 @@ int main(int argc, char** argv) {
     }
 
     check = mdsys_synch(&sys);
-	assert(check == 0);
+    assert(check == 0);
 
     check = mdsys_init(&sys);
     assert(check == 0);
@@ -57,7 +60,7 @@ int main(int argc, char** argv) {
         assert(check == 0);
     }
 
-    /* initialize forces and energies.*/
+    // initialize forces and energies.
     sys.nfi = 0;
     FORCE(&sys);
     ekin(&sys);
@@ -118,9 +121,6 @@ int main(int argc, char** argv) {
         printf("Simulation Done. Run time: %10.3fs\n", wallclock() - t_start);
         fclose(erg);
         fclose(traj);
-
-        // check = write_restart(&sys, "restart.rest");
-        // assert(check == 0);
     }
 
     MPI_Finalize();

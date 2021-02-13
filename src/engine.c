@@ -1,3 +1,6 @@
+#include <math.h>
+#include <assert.h>
+
 #include <omp.h>
 
 #if !defined(__cplusplus)
@@ -5,6 +8,8 @@
 #endif
 
 #include "engine.h"
+#include "defs.h"
+#include "utilities.h"
 
 /* a few physical constants */
 const double kboltz = 0.0019872067; /* boltzman constant in kcal/mol/K */
@@ -13,51 +18,61 @@ const double mvsq2e = 2390.05736153349; /* m*v^2 in kcal/mol */
 void ekin(mdsys_t* sys) {
     int i;
 
+    double mass_const = 0.5 * mvsq2e * sys->mass;
+
     sys->ekin = 0.0;
     for (i = 0; i < sys->natoms; ++i) {
-        sys->ekin += 0.5 * mvsq2e * sys->mass *
+        sys->ekin += mass_const *
             (sys->vx[i] * sys->vx[i] + sys->vy[i] * sys->vy[i] + sys->vz[i] * sys->vz[i]);
     }
     sys->temp = 2.0 * sys->ekin / (3.0 * sys->natoms - 3.0) / kboltz;
 }
 
 void force(mdsys_t* sys) {
-    double r, ffac;
-    double rx, ry, rz;
-    int i, j;
-
     /* zero energy and forces */
-    sys->epot = 0.0;
     azzero(sys->fx, sys->natoms);
     azzero(sys->fy, sys->natoms);
     azzero(sys->fz, sys->natoms);
 
-    for (i = 0; i < (sys->natoms); ++i) {
-        for (j = 0; j < (sys->natoms); ++j) {
-            /* particles have no interactions with themselves */
-            if (i == j)
-                continue;
+    double c12 = 4.0 * sys->epsilon * pow(sys->sigma, 12.0);
+    double c6 = 4.0 * sys->epsilon * pow(sys->sigma, 6.0);
+    double rcsq = sys->rcut * sys->rcut;
 
+    double epot = 0.0;
+    double* fx = sys->fx;
+    double* fy = sys->fy;
+    double* fz = sys->fz;
+
+#pragma omp parallel for schedule(dynamic) shared(sys, c12, c6, rcsq) reduction(+: epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
+    for (int i = 0; i < sys->natoms - 1; ++i) {
+        for (int j = i + 1; j < sys->natoms; ++j) {
             /* get distance between particle i and j */
-            rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
-            ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
-            rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
-            r = sqrt(rx * rx + ry * ry + rz * rz);
+            double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
+            double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
+            double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
+            double rsq = rx * rx + ry * ry + rz * rz;
 
             /* compute force and energy if within cutoff */
-            if (r < sys->rcut) {
-                ffac = -4.0 * sys->epsilon *
-                    (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
+            if (rsq < rcsq) {
+                double rinv = 1.0 / rsq;
+                double r6 = rinv * rinv * rinv;
 
-                sys->epot += 0.5 * 4.0 * sys->epsilon *
-                    (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
+                double ffac = (12.0 * c12 * r6 - 6.0 * c6) * r6 * rinv;
 
-                sys->fx[i] += rx / r * ffac;
-                sys->fy[i] += ry / r * ffac;
-                sys->fz[i] += rz / r * ffac;
+                epot += r6 * (c12 * r6 - c6);
+
+                fx[i] += rx * ffac;
+                fy[i] += ry * ffac;
+                fz[i] += rz * ffac;
+
+                fx[j] -= rx * ffac;
+                fy[j] -= ry * ffac;
+                fz[j] -= rz * ffac;
             }
         }
     }
+
+    sys->epot = epot;
 }
 
 void force_mpi_basic(mdsys_t* sys) {
@@ -74,15 +89,22 @@ void force_mpi_basic(mdsys_t* sys) {
     check = MPI_Bcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm);
     assert(check == MPI_SUCCESS);
 
+    double* rx = sys->rx;
+    double* ry = sys->ry;
+    double* rz = sys->rz;
+
+    double* pfx = sys->pfx;
+    double* pfy = sys->pfy;
+    double* pfz = sys->pfz;
+
+#pragma omp parallel for schedule(dynamic) shared(sys, rx, ry, rz) reduction(+: epot, pfx[:sys->natoms], pfy[:sys->natoms], pfz[:sys->natoms])
     for (int i = 0; i < (sys->natoms - 1); i += sys->nranks) {
         int ii = i + sys->rank;
-        if (ii >= (sys->natoms - 1))
-            break;
-
-        for (int j = ii + 1; j < sys->natoms; ++j) {
-            force_pair_symmetric(sys, sys->rx + ii, sys->ry + ii, sys->rz + ii, sys->rx + j,
-                                 sys->ry + j, sys->rz + j, &epot, sys->pfx + ii, sys->pfy + ii,
-                                 sys->pfz + ii, sys->pfx + j, sys->pfy + j, sys->pfz + j);
+        if (ii < (sys->natoms - 1)) {
+            for (int j = ii + 1; j < sys->natoms; ++j) {
+                force_pair_symmetric(sys, rx + ii, ry + ii, rz + ii, rx + j, ry + j, rz + j, &epot,
+                                     pfx + ii, pfy + ii, pfz + ii, pfx + j, pfy + j, pfz + j);
+            }
         }
     }
 
@@ -94,6 +116,8 @@ void force_mpi_basic(mdsys_t* sys) {
     assert(check == MPI_SUCCESS);
     check = MPI_Reduce(&epot, &sys->epot, 1, MPI_DOUBLE, MPI_SUM, 0, sys->comm);
     assert(check == MPI_SUCCESS);
+
+    UNUSED(check);
 }
 
 void force_mpi_ibasic(mdsys_t* sys) {
@@ -117,16 +141,22 @@ void force_mpi_ibasic(mdsys_t* sys) {
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
 
-    // this is unbalanced
+    double* rx = sys->rx;
+    double* ry = sys->ry;
+    double* rz = sys->rz;
+
+    double* pfx = sys->pfx;
+    double* pfy = sys->pfy;
+    double* pfz = sys->pfz;
+
+#pragma omp parallel for schedule(dynamic) shared(sys, rx, ry, rz) reduction(+: epot, pfx[:sys->natoms], pfy[:sys->natoms], pfz[:sys->natoms])
     for (int i = 0; i < (sys->natoms - 1); i += sys->nranks) {
         int ii = i + sys->rank;
-        if (ii >= (sys->natoms - 1))
-            break;
-
-        for (int j = ii + 1; j < sys->natoms; ++j) {
-            force_pair_symmetric(sys, sys->rx + ii, sys->ry + ii, sys->rz + ii, sys->rx + j,
-                                 sys->ry + j, sys->rz + j, &epot, sys->pfx + ii, sys->pfy + ii,
-                                 sys->pfz + ii, sys->pfx + j, sys->pfy + j, sys->pfz + j);
+        if (ii >= (sys->natoms - 1)) {
+            for (int j = ii + 1; j < sys->natoms; ++j) {
+                force_pair_symmetric(sys, rx + ii, ry + ii, rz + ii, rx + j, ry + j, rz + j, &epot,
+                                     pfx + ii, pfy + ii, pfz + ii, pfx + j, pfy + j, pfz + j);
+            }
         }
     }
 
@@ -146,6 +176,8 @@ void force_mpi_ibasic(mdsys_t* sys) {
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
+
+    UNUSED(check);
 }
 
 void force_mpi_ibasic_even(mdsys_t* sys) {
@@ -176,11 +208,19 @@ void force_mpi_ibasic_even(mdsys_t* sys) {
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
 
+    double* rx = sys->rx;
+    double* ry = sys->ry;
+    double* rz = sys->rz;
+
+    double* pfx = sys->pfx;
+    double* pfy = sys->pfy;
+    double* pfz = sys->pfz;
+
+#pragma omp parallel for schedule(dynamic) shared(sys, rx, ry, rz) reduction(+: epot, pfx[:sys->natoms], pfy[:sys->natoms], pfz[:sys->natoms])
     for (int i = ibegin; i < iend; ++i) {
         for (int j = i + 1; j < sys->natoms; ++j) {
-            force_pair_symmetric(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j,
-                                 sys->ry + j, sys->rz + j, &epot, sys->pfx + i, sys->pfy + i,
-                                 sys->pfz + i, sys->pfx + j, sys->pfy + j, sys->pfz + j);
+            force_pair_symmetric(sys, rx + i, ry + i, rz + i, rx + j, ry + j, rz + j, &epot,
+                                 pfx + i, pfy + i, pfz + i, pfx + j, pfy + j, pfz + j);
         }
     }
 
@@ -200,6 +240,8 @@ void force_mpi_ibasic_even(mdsys_t* sys) {
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
+
+    UNUSED(check);
 }
 
 void force_mpi_primitive(mdsys_t* sys) {
@@ -214,30 +256,33 @@ void force_mpi_primitive(mdsys_t* sys) {
     check = MPI_Ibcast(sys->rz, sys->natoms, MPI_DOUBLE, 0, sys->comm, reqs + nreqs++);
     assert(check == MPI_SUCCESS);
 
-    const int ibegin = sys->rank * (sys->natoms / sys->nranks);
-    int iend = ibegin + (sys->natoms / sys->nranks);
-    if (iend > sys->natoms) {
-        iend = sys->natoms;
-    }
+    const int ibegin = sys->displs[sys->rank];
+    int iend = ibegin + sys->counts[sys->rank];
 
     /* zero energy and forces */
     double epot = 0.0;
     azzero(sys->pfx, sys->natoms);
     azzero(sys->pfy, sys->natoms);
     azzero(sys->pfz, sys->natoms);
-    azzero(sys->fx, sys->natoms);
-    azzero(sys->fy, sys->natoms);
-    azzero(sys->fz, sys->natoms);
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
 
+    double* rx = sys->rx;
+    double* ry = sys->ry;
+    double* rz = sys->rz;
+
+    double* pfx = sys->pfx;
+    double* pfy = sys->pfy;
+    double* pfz = sys->pfz;
+
+#pragma omp parallel for schedule(dynamic) shared(sys, rx, ry, rz) reduction(+: epot, pfx[:sys->natoms], pfy[:sys->natoms], pfz[:sys->natoms])
     for (int i = ibegin; i < iend; ++i) {
         for (int j = 0; j < (sys->natoms); ++j) {
             if (i == j)
                 continue;
-            force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j, sys->ry + j,
-                       sys->rz + j, &epot, sys->pfx + i, sys->pfy + i, sys->pfz + i);
+            force_pair(sys, rx + i, ry + i, rz + i, rx + j, ry + j, rz + j, &epot, pfx + i, pfy + i,
+                       pfz + i);
         }
     }
 
@@ -257,6 +302,8 @@ void force_mpi_primitive(mdsys_t* sys) {
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
+
+    UNUSED(check);
 }
 
 void force_mpi_slice(mdsys_t* sys) {
@@ -284,13 +331,21 @@ void force_mpi_slice(mdsys_t* sys) {
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
 
+    double* rx = sys->rx;
+    double* ry = sys->ry;
+    double* rz = sys->rz;
+
+    double* pfx = sys->pfx;
+    double* pfy = sys->pfy;
+    double* pfz = sys->pfz;
+
+#pragma omp parallel for schedule(dynamic) shared(sys, ibegin, iend, rx, ry, rz) reduction(+: epot, pfx[:count], pfy[:count], pfz[:count])
     for (int i = ibegin; i < iend; ++i) {
         for (int j = 0; j < sys->natoms; ++j) {
             if (i == j)
                 continue;
-            force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->rx + j, sys->ry + j,
-                       sys->rz + j, &epot, sys->pfx + i - ibegin, sys->pfy + i - ibegin,
-                       sys->pfz + i - ibegin);
+            force_pair(sys, rx + i, ry + i, rz + i, rx + j, ry + j, rz + j, &epot, pfx + i - ibegin,
+                       pfy + i - ibegin, pfz + i - ibegin);
         }
     }
 
@@ -311,6 +366,8 @@ void force_mpi_slice(mdsys_t* sys) {
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
+
+    UNUSED(check);
 }
 
 void force_mpi_ring(mdsys_t* sys) {
@@ -356,6 +413,22 @@ void force_mpi_ring(mdsys_t* sys) {
         }
     }
 
+    double* rx = sys->rx;
+    double* ry = sys->ry;
+    double* rz = sys->rz;
+
+    double* pfx = sys->pfx;
+    double* pfy = sys->pfy;
+    double* pfz = sys->pfz;
+
+    double* srx = sys->srx;
+    double* sry = sys->sry;
+    double* srz = sys->srz;
+
+    double* rrx = sys->rrx;
+    double* rry = sys->rry;
+    double* rrz = sys->rrz;
+
     for (int iter = 0; iter < sys->nranks - 1; ++iter) {
         int nreqs_iter = 0;
         MPI_Request reqs_iter[6];
@@ -381,12 +454,13 @@ void force_mpi_ring(mdsys_t* sys) {
                           reqs_iter + nreqs_iter++);
         assert(check == MPI_SUCCESS);
 
+#pragma omp parallel for schedule(dynamic) shared(sys, count, sendcount, rx, ry, rz, srx, sry, srz, rrx, rry, rrz) reduction(+: epot, pfx[:sendcount], pfy[:sendcount], pfz[:sendcount])
         for (int i = 0; i < count; ++i) {
             for (int j = 0; j < sendcount; ++j) {
-                if ((other == sys->rank) && (i == j))
-                    continue;
-                force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->srx + j, sys->sry + j,
-                           sys->srz + j, &epot, sys->pfx + i, sys->pfy + i, sys->pfz + i);
+                if ((other != sys->rank) || (i != j)) {
+                    force_pair(sys, rx + i, ry + i, rz + i, srx + j, sry + j, srz + j, &epot,
+                               pfx + i, pfy + i, pfz + i);
+                }
             }
         }
 
@@ -394,30 +468,31 @@ void force_mpi_ring(mdsys_t* sys) {
         assert(check == MPI_SUCCESS);
 
         // swap sr* and rr*
-        double* tmpp = sys->srx;
-        sys->srx = sys->rrx;
-        sys->rrx = tmpp;
+        double* tmpp = srx;
+        srx = rrx;
+        rrx = tmpp;
 
-        tmpp = sys->sry;
-        sys->sry = sys->rry;
-        sys->rry = tmpp;
+        tmpp = sry;
+        sry = rry;
+        rry = tmpp;
 
-        tmpp = sys->srz;
-        sys->srz = sys->rrz;
-        sys->rrz = tmpp;
+        tmpp = srz;
+        srz = rrz;
+        rrz = tmpp;
 
         sendcount = recvcount;
         other = (other + sys->nranks - 1) % sys->nranks;
         recvcount = sys->counts[other];
     }
 
-    // process last sendbuf
+// process last sendbuf
+#pragma omp parallel for schedule(dynamic) shared(sys, count, sendcount, rx, ry, rz, srx, sry, srz, rrx, rry, rrz) reduction(+: epot, pfx[:sendcount], pfy[:sendcount], pfz[:sendcount])
     for (int i = 0; i < count; ++i) {
         for (int j = 0; j < sendcount; ++j) {
-            if ((other == sys->rank) && (i == j))
-                continue;
-            force_pair(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->srx + j, sys->sry + j,
-                       sys->srz + j, &epot, sys->pfx + i, sys->pfy + i, sys->pfz + i);
+            if ((other != sys->rank) || (i != j)) {
+                force_pair(sys, rx + i, ry + i, rz + i, srx + j, sry + j, srz + j, &epot, pfx + i,
+                           pfy + i, pfz + i);
+            }
         }
     }
 
@@ -438,6 +513,8 @@ void force_mpi_ring(mdsys_t* sys) {
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
+
+    UNUSED(check);
 }
 
 void force_mpi_symmring(mdsys_t* sys) {
@@ -485,6 +562,22 @@ void force_mpi_symmring(mdsys_t* sys) {
         }
     }
 
+    double* rx = sys->rx;
+    double* ry = sys->ry;
+    double* rz = sys->rz;
+
+    double* pfx = sys->pfx;
+    double* pfy = sys->pfy;
+    double* pfz = sys->pfz;
+
+    double* srx = sys->srx;
+    double* sry = sys->sry;
+    double* srz = sys->srz;
+
+    double* rrx = sys->rrx;
+    double* rry = sys->rry;
+    double* rrz = sys->rrz;
+
     for (int iter = 0; iter < sys->nranks - 1; ++iter) {
         int nreqs_iter = 0;
         MPI_Request reqs_iter[6];
@@ -513,15 +606,15 @@ void force_mpi_symmring(mdsys_t* sys) {
         if (other >= sys->rank) {
             const int jbegin = sys->displs[other];
 
+#pragma omp parallel for schedule(dynamic) shared(sys, count, sendcount, rx, ry, rz, srx, sry, srz, rrx, rry, rrz) reduction(+: epot, pfx[:sendcount], pfy[:sendcount], pfz[:sendcount])
             for (int i = 0; i < count; ++i) {
                 for (int j = 0; j < sendcount; ++j) {
                     if ((other == sys->rank) && (i >= j))
                         continue;
-                    force_pair_symmetric(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->srx + j,
-                                         sys->sry + j, sys->srz + j, &epot, sys->pfx + ibegin + i,
-                                         sys->pfy + ibegin + i, sys->pfz + ibegin + i,
-                                         sys->pfx + jbegin + j, sys->pfy + jbegin + j,
-                                         sys->pfz + jbegin + j);
+                    force_pair_symmetric(sys, rx + i, ry + i, rz + i, srx + j, sry + j, srz + j,
+                                         &epot, pfx + ibegin + i, pfy + ibegin + i,
+                                         pfz + ibegin + i, pfx + jbegin + j, pfy + jbegin + j,
+                                         pfz + jbegin + j);
                 }
             }
         }
@@ -530,17 +623,17 @@ void force_mpi_symmring(mdsys_t* sys) {
         assert(check == MPI_SUCCESS);
 
         // swap sr* and rr*
-        double* tmpp = sys->srx;
-        sys->srx = sys->rrx;
-        sys->rrx = tmpp;
+        double* tmpp = srx;
+        srx = rrx;
+        rrx = tmpp;
 
-        tmpp = sys->sry;
-        sys->sry = sys->rry;
-        sys->rry = tmpp;
+        tmpp = sry;
+        sry = rry;
+        rry = tmpp;
 
-        tmpp = sys->srz;
-        sys->srz = sys->rrz;
-        sys->rrz = tmpp;
+        tmpp = srz;
+        srz = rrz;
+        rrz = tmpp;
 
         sendcount = recvcount;
         other = (other + sys->nranks - 1) % sys->nranks;
@@ -551,15 +644,14 @@ void force_mpi_symmring(mdsys_t* sys) {
     if (other >= sys->rank) {
         const int jbegin = sys->displs[other];
 
+#pragma omp parallel for schedule(dynamic) shared(sys, count, sendcount, rx, ry, rz, srx, sry, srz, rrx, rry, rrz) reduction(+: epot, pfx[:sendcount], pfy[:sendcount], pfz[:sendcount])
         for (int i = 0; i < count; ++i) {
             for (int j = 0; j < sendcount; ++j) {
                 if ((other == sys->rank) && (i >= j))
                     continue;
-                force_pair_symmetric(sys, sys->rx + i, sys->ry + i, sys->rz + i, sys->srx + j,
-                                     sys->sry + j, sys->srz + j, &epot, sys->pfx + ibegin + i,
-                                     sys->pfy + ibegin + i, sys->pfz + ibegin + i,
-                                     sys->pfx + jbegin + j, sys->pfy + jbegin + j,
-                                     sys->pfz + jbegin + j);
+                force_pair_symmetric(sys, rx + i, ry + i, rz + i, srx + j, sry + j, srz + j, &epot,
+                                     pfx + ibegin + i, pfy + ibegin + i, pfz + ibegin + i,
+                                     pfx + jbegin + j, pfy + jbegin + j, pfz + jbegin + j);
             }
         }
     }
@@ -581,56 +673,21 @@ void force_mpi_symmring(mdsys_t* sys) {
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
-}
 
-void force_openmp_wnewton(mdsys_t* sys) {
-    azzero(sys->fx, sys->natoms);
-    azzero(sys->fy, sys->natoms);
-    azzero(sys->fz, sys->natoms);
-
-    double epot = 0.0;
-    double* fx = sys->fx;
-    double* fy = sys->fy;
-    double* fz = sys->fz;
-
-#pragma omp parallel for schedule(dynamic) shared(sys) reduction(+: epot, fx[:sys->natoms], fy[:sys->natoms], fz[:sys->natoms])
-    for (int i = 0; i < sys->natoms - 1; ++i) {
-        for (int j = i + 1; j < sys->natoms; ++j) {
-            // get distance between particle i and j
-            const double rx = pbc(sys->rx[i] - sys->rx[j], 0.5 * sys->box);
-            const double ry = pbc(sys->ry[i] - sys->ry[j], 0.5 * sys->box);
-            const double rz = pbc(sys->rz[i] - sys->rz[j], 0.5 * sys->box);
-            const double r = sqrt(rx * rx + ry * ry + rz * rz);
-
-            // compute force and energy if within cutoff
-            if (r < sys->rcut) {
-                const double ffac = -4.0 * sys->epsilon *
-                    (-12.0 * pow(sys->sigma / r, 12.0) / r + 6 * pow(sys->sigma / r, 6.0) / r);
-
-                epot += 4.0 * sys->epsilon * (pow(sys->sigma / r, 12.0) - pow(sys->sigma / r, 6.0));
-
-                fx[i] += rx / r * ffac;
-                fy[i] += ry / r * ffac;
-                fz[i] += rz / r * ffac;
-
-                fx[j] -= rx / r * ffac;
-                fy[j] -= ry / r * ffac;
-                fz[j] -= rz / r * ffac;
-            }
-        }
-    }
-
-    sys->epot = epot;
+    UNUSED(check);
 }
 
 void verlet_1(mdsys_t* sys) {
     int i;
 
+    double mass_time_const = 0.5 * sys->dt / mvsq2e / sys->mass;
+
     /* first part: propagate velocities by half and positions by full step */
     for (i = 0; i < sys->natoms; ++i) {
-        sys->vx[i] += 0.5 * sys->dt / mvsq2e * sys->fx[i] / sys->mass;
-        sys->vy[i] += 0.5 * sys->dt / mvsq2e * sys->fy[i] / sys->mass;
-        sys->vz[i] += 0.5 * sys->dt / mvsq2e * sys->fz[i] / sys->mass;
+        sys->vx[i] += mass_time_const * sys->fx[i];
+        sys->vy[i] += mass_time_const * sys->fy[i];
+        sys->vz[i] += mass_time_const * sys->fz[i];
+
         sys->rx[i] += sys->dt * sys->vx[i];
         sys->ry[i] += sys->dt * sys->vy[i];
         sys->rz[i] += sys->dt * sys->vz[i];
@@ -640,10 +697,12 @@ void verlet_1(mdsys_t* sys) {
 void verlet_2(mdsys_t* sys) {
     int i;
 
+    double mass_time_const = 0.5 * sys->dt / mvsq2e / sys->mass;
+
     /* second part: propagate velocities by another half step */
     for (i = 0; i < sys->natoms; ++i) {
-        sys->vx[i] += 0.5 * sys->dt / mvsq2e * sys->fx[i] / sys->mass;
-        sys->vy[i] += 0.5 * sys->dt / mvsq2e * sys->fy[i] / sys->mass;
-        sys->vz[i] += 0.5 * sys->dt / mvsq2e * sys->fz[i] / sys->mass;
+        sys->vx[i] += mass_time_const * sys->fx[i];
+        sys->vy[i] += mass_time_const * sys->fy[i];
+        sys->vz[i] += mass_time_const * sys->fz[i];
     }
 }

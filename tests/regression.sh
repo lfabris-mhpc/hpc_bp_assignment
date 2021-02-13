@@ -2,7 +2,7 @@
 
 tolerance=0.0001
 
-rm *.dat *.inp *.xyz *.rest 
+rm *.dat *.inp *.xyz *.rest
 
 cp examples/${2}.* .
 

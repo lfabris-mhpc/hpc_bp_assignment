@@ -109,11 +109,11 @@ void mdsys_free(mdsys_t* sys) {
 }
 
 int mdsys_synch(mdsys_t* sys) {
-	int check;
+    int check;
     int nreqs = 0;
     MPI_Request reqs[9];
     MPI_Status statuses[9];
-	
+
     // broadcasts of mdsys parameters
     // int natoms, nfi, nsteps;
     check = MPI_Ibcast(&(sys->natoms), 1, MPI_INT, 0, sys->comm, reqs + nreqs++);
@@ -139,6 +139,6 @@ int mdsys_synch(mdsys_t* sys) {
 
     check = MPI_Waitall(nreqs, reqs, statuses);
     assert(check == MPI_SUCCESS);
-	
-	return check != MPI_SUCCESS;
+
+    return check != MPI_SUCCESS;
 }
