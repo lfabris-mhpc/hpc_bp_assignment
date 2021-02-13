@@ -26,6 +26,9 @@ TEST(EngineEkin, ekin) {
 
     ekin(&sys);
     ASSERT_DOUBLE_EQ(sys.ekin, Ek_byhand);
+
+    check = mdsys_free(&sys);
+    assert(check == 0);
 }
 
 TEST(EngineVerlet_1, verlet_1) {
@@ -78,6 +81,9 @@ TEST(EngineVerlet_2, verlet_2) {
     ASSERT_DOUBLE_EQ(sys.vx[0], VERLET_2_byhand[0]);
     ASSERT_DOUBLE_EQ(sys.vy[0], VERLET_2_byhand[1]);
     ASSERT_DOUBLE_EQ(sys.vz[0], VERLET_2_byhand[2]);
+
+    check = mdsys_free(&sys);
+    assert(check == 0);
 }
 
 TEST(EngineForce, force_openmp) {
@@ -105,6 +111,9 @@ TEST(EngineForce, force_openmp) {
     ASSERT_DOUBLE_EQ(sys.fx[1], -Fx_byhand);
     ASSERT_DOUBLE_EQ(sys.fy[1], -Fy_byhand);
     ASSERT_DOUBLE_EQ(sys.fz[1], -Fz_byhand);
+
+    check = mdsys_free(&sys);
+    assert(check == 0);
 }
 
 

@@ -80,15 +80,8 @@ int main(int argc, char** argv) {
     fclose(erg);
     fclose(traj);
 
-    free(sys.rx);
-    free(sys.ry);
-    free(sys.rz);
-    free(sys.vx);
-    free(sys.vy);
-    free(sys.vz);
-    free(sys.fx);
-    free(sys.fy);
-    free(sys.fz);
+    check = mdsys_free(&sys);
+    assert(check == 0);
 
     return 0;
 }
