@@ -16,6 +16,10 @@ to compile
 $ cmake --build .
 to remove all compiled objects
 $ cmake --build . --target clean
+  
+Benchmarking (the speedup is measured by dividing the time obtained in the v.0.base by the time of the benchmarked branch):
+- Optimization branch, argon_108:  Speedup = 3.578
+- Optimization branch, argon_2916: Speedup = 2.560
 
 The contributors are:
 - Mattia Mencagli as mattiamencagli
