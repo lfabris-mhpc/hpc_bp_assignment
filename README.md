@@ -11,7 +11,7 @@ Type:
 `$ cd build`  
 `$ cmake ..`  
 optionally, select the build type with:  
-`$ cmake -DCMAKE_BUILD_TYPE=\<type\> ..`  
+`$ cmake -DCMAKE_BUILD_TYPE=<type> ..`  
 with <type> one of Debug, Release, MinSizeRel, RelWithDebInfo  
 to compile:  
 `$ cmake --build .`  
