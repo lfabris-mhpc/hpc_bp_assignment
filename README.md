@@ -19,10 +19,20 @@ to remove all compiled objects:
 `$ cmake --build . --target clean`  
 
 Benchmarking (the speedup is measured by dividing the time obtained in the v.0.base by the time of the benchmarked branch):  
-Optimization branch: measured on a machine with Intel(R) Core(TM) i5-8250U CPU @ 1.60HGz, CPU MHz: 800.119, L3 cache: 6 MiB.  
-argon_108:  speedup = 3.578; reference time: 11.243s  
-argon_2916: speedup = 2.560; reference time: 288.341s  
-
+Optimization branch: measured on a machine with Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz, L3 cache: 6 MiB.  
+argon_108:  speedup : 3.578; reference time:  11.243s   
+argon_2916: speedup : 2.560; reference time: 288.341s
+  
+OpenMP branch (before merging with the Optimization branch): measured on a machine with Intel(R) Core(TM) i7-4510U CPU @ 2.00GHz, L3 cache: 4 MiB.  
+nthreads=1
+argon_108:  speedup: 4.122; reference time:  39.199s  
+argon_2916: speedup: 2.395; reference time: 966.978s  
+nthreads=2
+argon_108:  speedup: 5.557; reference time:  39.199s  
+argon_2916: speedup: 2.484; reference time: 966.978s
+nthreads=4
+argon_108:  speedup: 5.526; reference time:  39.199s  
+argon_2916: speedup: 2.501; reference time: 966.978s
 The contributors are:  
 
 - Mattia Mencagli as mattiamencagli  
