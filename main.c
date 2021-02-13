@@ -16,19 +16,14 @@
 #include "defs.h"
 #include "utilities.h"
 
-// force_mpi_basic
-// force_mpi_ibasic
-// force_mpi_ibasic_even
-// force_mpi_primitive
-// force_mpi_slice
-// force_mpi_ring
-// force_mpi_symmring
-#define FORCE force_mpi_ibasic_even
+#if !defined(FORCE)
+#define FORCE force_mpi_basic
+#endif
 
 int main(int argc, char** argv) {
     int check = MPI_Init(&argc, &argv);
     assert(check == MPI_SUCCESS);
-	UNUSED(check);
+    UNUSED(check);
 
     mdsys_t sys;
     sys.comm = MPI_COMM_WORLD;
