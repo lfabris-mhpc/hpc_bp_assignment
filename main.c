@@ -19,8 +19,7 @@
 
 int main(int argc, char** argv) {
     int mpi_thread_provided;
-    // int check = MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &mpi_thread_provided);
-    int check = MPI_Init(&argc, &argv);
+    int check = MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &mpi_thread_provided);
     assert(check == MPI_SUCCESS);
     UNUSED(check);
 
